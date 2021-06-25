@@ -1,6 +1,6 @@
 import { ethers } from "hardhat"
 import { Watcher } from "@eth-optimism/watcher"
-import { getContractFactory } from "@eth-optimism/contracts"
+import { getContractFactory, loadContract } from "@eth-optimism/contracts"
 
 // Set up some contract factories. You can ignore this stuff.
 const factory = (name, ovm = false) => {
@@ -8,8 +8,7 @@ const factory = (name, ovm = false) => {
     return new ethers.ContractFactory(artifact.abi, artifact.bytecode)
 }
 const factory__L1_ERC20 = factory('ERC20')
-const factory__L2_ERC20 = factory('L2DepositedERC20', true)
-const factory__L1_ERC20Gateway = getContractFactory('OVM_L1ERC20Gateway')
+const factory__L2_ERC20 = getContractFactory('L2StandardERC20', undefined, true)
 
 async function main() {
     // Set up our RPC provider connections.
@@ -25,8 +24,11 @@ async function main() {
 
     // L1 messenger address depends on the deployment, this is default for our local deployment.
     const l1MessengerAddress = '0x59b670e9fA9D0A427751Af201D676719a970857b'
+    const l1StandardBridgeAddress = '0x851356ae760d987E095750cCeb3bC6014560891C'
     // L2 messenger address is always the same.
     const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
+    // L2 standard bridge address is always the same.
+    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
 
     // Tool that helps watches and waits for messages to be relayed between L1 and L2.
     const watcher = new Watcher({
@@ -48,53 +50,75 @@ async function main() {
     )
     await L1_ERC20.deployTransaction.wait()
 
+    const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
+
+    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
+
+    // // Checking L1 Standard Bridge
+    // const l1MessengerStored = await L1_StandardBridge.callStatic.messenger()
+    // if (l1MessengerStored !== l1MessengerAddress) {
+    //     throw new Error('L1 messenger address was not correctly set')
+    // }
+    // const l2TokenBridgeStored = await L1_StandardBridge.callStatic.l2TokenBridge()
+    // if (l2TokenBridgeStored !== L2_StandardBridge.address) {
+    //     throw new Error('L2 bridge address was not correctly set')
+    // }
+    // // Checking L2 Standard Bridge
+    // const l2MessengerStored = await L2_StandardBridge.callStatic.messenger()
+    // if (l2MessengerStored !== l2MessengerAddress) {
+    //     throw new Error('L2 messenger address was not correctly set')
+    // }
+    // const l1TokenBridgeStored = await L2_StandardBridge.callStatic.l1TokenBridge()
+    // if (l1TokenBridgeStored !== L1_StandardBridge.address) {
+    //     throw new Error('L1 bridge address was not correctly set')
+    // }
+
     // Deploy the paired ERC20 token to L2.
     console.log('Deploying L2 ERC20...')
     const L2_ERC20 = await factory__L2_ERC20.connect(l2Wallet).deploy(
-        l2MessengerAddress,
+        L2_StandardBridge.address,
+        L1_ERC20.address,
         'L2 ERC20', //name
+        'L2ERC20', //symbol
         {
             gasPrice: 0
         }
     )
     await L2_ERC20.deployTransaction.wait()
 
-    // Create a gateway that connects the two contracts.
-    console.log('Deploying L1 ERC20 Gateway...')
-    const L1_ERC20Gateway = await factory__L1_ERC20Gateway.connect(l1Wallet).deploy(
-        L1_ERC20.address,
-        L2_ERC20.address,
-        l1MessengerAddress
-    )
-    await L1_ERC20Gateway.deployTransaction.wait()
-
-    // Make the L2 ERC20 aware of the gateway contract.
-    console.log('Initializing L2 ERC20...')
-    const tx0 = await L2_ERC20.init(
-        L1_ERC20Gateway.address,
-        {
-            gasPrice: 0
-        }
-    )
-    await tx0.wait()
+    // Checking L2 ERC20
+    const erc20L1TokenStored = await L2_ERC20.callStatic.l1Token()
+    if (erc20L1TokenStored !== L1_ERC20.address) {
+        throw new Error('L1 ERC20 token address was not correctly set')
+    }
+    const erc20L2TokenBridgeStored = await L2_ERC20.callStatic.l2Bridge()
+    if (erc20L2TokenBridgeStored !== L2_StandardBridge.address) {
+        throw new Error('L2 bridge address was not correctly set')
+    }
 
     // Initial balances.
     console.log(`Balance on L1: ${await L1_ERC20.balanceOf(l1Wallet.address)}`) // 1234
     console.log(`Balance on L2: ${await L2_ERC20.balanceOf(l1Wallet.address)}`) // 0
 
-    // Allow the gateway to lock up some of our tokens.
-    console.log('Approving tokens for ERC20 gateway...')
-    const tx1 = await L1_ERC20.approve(L1_ERC20Gateway.address, 1234)
-    await tx1.wait()
+    // Allow the standard bridge to lock up some of our tokens.
+    console.log('Approving tokens for ERC20 standard bridge...')
+    const approve_L1_ERC20_tx = await L1_ERC20.approve(L1_StandardBridge.address, 1234)
+    await approve_L1_ERC20_tx.wait()
 
-    // Lock the tokens up inside the gateway and ask the L2 contract to mint new ones.
+    // Lock the tokens up inside the standard bridge and ask the L2 contract to mint new ones.
     console.log('Depositing tokens into L2 ERC20...')
-    const tx2 = await L1_ERC20Gateway.deposit(1234)
-    await tx2.wait()
+    const deposit_L1_ERC20_tx = await L1_StandardBridge.connect(l1Wallet).depositERC20(
+        L1_ERC20.address,
+        L2_ERC20.address,
+        1234,
+        2000000,
+        '0x'
+    )
+    await deposit_L1_ERC20_tx.wait()
 
     // Wait for the message to be relayed to L2.
     console.log('Waiting for deposit to be relayed to L2...')
-    const [msgHash1] = await watcher.getMessageHashesFromL1Tx(tx2.hash)
+    const [msgHash1] = await watcher.getMessageHashesFromL1Tx(deposit_L1_ERC20_tx.hash)
     await watcher.getL2TransactionReceipt(msgHash1)
 
     // Log some balances to see that it worked!
@@ -103,17 +127,20 @@ async function main() {
 
     // Burn the tokens on L2 and ask the L1 contract to unlock on our behalf.
     console.log(`Withdrawing tokens back to L1 ERC20...`)
-    const tx3 = await L2_ERC20.withdraw(
+    const withdraw_L2_ERC20_tx = await L2_StandardBridge.connect(l2Wallet).withdraw(
+        L2_ERC20.address,
         1234,
+        2000000,
+        '0x',
         {
             gasPrice: 0
         }
     )
-    await tx3.wait()
+    await withdraw_L2_ERC20_tx.wait()
 
     // Wait for the message to be relayed to L1.
     console.log(`Waiting for withdrawal to be relayed to L1...`)
-    const [msgHash2] = await watcher.getMessageHashesFromL2Tx(tx3.hash)
+    const [msgHash2] = await watcher.getMessageHashesFromL2Tx(withdraw_L2_ERC20_tx.hash)
     await watcher.getL1TransactionReceipt(msgHash2)
 
     // Log balances again!
