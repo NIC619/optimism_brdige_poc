@@ -4,12 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "clean": "rimraf ./cache && rimraf ./artifacts",
+    "clean": "rimraf ./cache && rimraf ./cache-ovm && rimraf ./artifacts && rimraf ./artifacts-ovm",
     "compile": "yarn clean && hardhat compile && hardhat --network optimism compile",
     "test": "npx hardhat --network hardhat test"
   },
   "devDependencies": {
-    "@eth-optimism/contracts": "^0.4.1",
+    "@eth-optimism/contracts": "0.4.1",
     "@eth-optimism/core-utils": "^0.4.6",
     "@eth-optimism/hardhat-ovm": "^0.2.2",
     "@nomiclabs/hardhat-ethers": "^2.0.1",

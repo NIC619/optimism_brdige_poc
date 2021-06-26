@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@eth-optimism/contracts@^0.4.1":
+"@eth-optimism/contracts@0.4.1":
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/@eth-optimism/contracts/-/contracts-0.4.1.tgz#c01dbc61d16aa28748a38dc6bdf627e2769191d9"
   integrity sha512-oXHNUFUMVL0hLJfuquj9/8PKdCQPSVCxg3vCGbjgeWA3PAsMUn3JCg15dsw+9qhcADt8CaE0brF/OJbarFWD8g==

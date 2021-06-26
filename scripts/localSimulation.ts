@@ -31,6 +31,9 @@ async function main() {
     // L2 standard bridge address is always the same.
     const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
 
+    const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
+    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
+
     // Tool that helps watches and waits for messages to be relayed between L1 and L2.
     const watcher = new Watcher({
         l1: {
@@ -50,10 +53,6 @@ async function main() {
         'L1 ERC20', //name
     )
     await L1_ERC20.deployTransaction.wait()
-
-    const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
-
-    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
 
     // Deploy the paired ERC20 token to L2.
     console.log('Deploying L2 ERC20...')
