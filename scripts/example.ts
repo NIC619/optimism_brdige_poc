@@ -24,6 +24,7 @@ async function main() {
 
     // L1 messenger address depends on the deployment, this is default for our local deployment.
     const l1MessengerAddress = '0x59b670e9fA9D0A427751Af201D676719a970857b'
+    // L1 standard bridge address depends on the deployment, this is default for our local deployment.
     const l1StandardBridgeAddress = '0x851356ae760d987E095750cCeb3bC6014560891C'
     // L2 messenger address is always the same.
     const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
@@ -53,25 +54,6 @@ async function main() {
     const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
 
     const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
-
-    // // Checking L1 Standard Bridge
-    // const l1MessengerStored = await L1_StandardBridge.callStatic.messenger()
-    // if (l1MessengerStored !== l1MessengerAddress) {
-    //     throw new Error('L1 messenger address was not correctly set')
-    // }
-    // const l2TokenBridgeStored = await L1_StandardBridge.callStatic.l2TokenBridge()
-    // if (l2TokenBridgeStored !== L2_StandardBridge.address) {
-    //     throw new Error('L2 bridge address was not correctly set')
-    // }
-    // // Checking L2 Standard Bridge
-    // const l2MessengerStored = await L2_StandardBridge.callStatic.messenger()
-    // if (l2MessengerStored !== l2MessengerAddress) {
-    //     throw new Error('L2 messenger address was not correctly set')
-    // }
-    // const l1TokenBridgeStored = await L2_StandardBridge.callStatic.l1TokenBridge()
-    // if (l1TokenBridgeStored !== L1_StandardBridge.address) {
-    //     throw new Error('L1 bridge address was not correctly set')
-    // }
 
     // Deploy the paired ERC20 token to L2.
     console.log('Deploying L2 ERC20...')
@@ -111,8 +93,8 @@ async function main() {
         L1_ERC20.address,
         L2_ERC20.address,
         1234,
-        2000000,
-        '0x'
+        2000000, //L2 gas limit
+        '0x' //data
     )
     await deposit_L1_ERC20_tx.wait()
 
@@ -130,8 +112,8 @@ async function main() {
     const withdraw_L2_ERC20_tx = await L2_StandardBridge.connect(l2Wallet).withdraw(
         L2_ERC20.address,
         1234,
-        2000000,
-        '0x',
+        2000000, //L1 gas limit
+        '0x', //data
         {
             gasPrice: 0
         }
