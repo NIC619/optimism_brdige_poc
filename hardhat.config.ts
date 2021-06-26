@@ -19,6 +19,16 @@ module.exports = {
       chainId: 1,
       accounts
     },
+    goerli: {
+      chainId: 5,
+      url: "",
+      accounts
+    },
+    kovan: {
+      chainId: 42,
+      url: "",
+      accounts
+    },
     // Add this network to your config!
     optimism: {
       url: 'http://127.0.0.1:8545',
