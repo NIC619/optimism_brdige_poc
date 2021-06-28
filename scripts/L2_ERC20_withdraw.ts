@@ -39,14 +39,12 @@ async function main() {
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
-    const l1ERC20Address = '0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd' // Kovan LON
-    const L1_ERC20 = await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20', l1ERC20Address)
     const l2ERC20Address = '0x235d9B4249E9C9D705fAC6E98F7D21E58091220A'
     const L2_ERC20 = instance('ERC20', l2ERC20Address, l2RpcProvider, true)
 
 
     // Checking balance
-    const withdrawAmount = ethers.utils.parseUnits('450')
+    const withdrawAmount = ethers.utils.parseUnits('50')
     const l2Balance = await L2_ERC20.balanceOf(l1Wallet.address)
     console.log(`Balance on L2: ${l2Balance.toString()}`)
     if (l2Balance.lt(withdrawAmount)) {
@@ -54,7 +52,13 @@ async function main() {
     }
 
     console.log('Approving L2 StandardBridge...')
-    const approve_l2_erc20_tx = await L2_ERC20.connect(l2Wallet).approve(L2_StandardBridge.address, withdrawAmount)
+    const approve_l2_erc20_tx = await L2_ERC20.connect(l2Wallet).approve(
+        L2_StandardBridge.address,
+        withdrawAmount,
+        {
+            gasPrice: 0
+        }
+    )
     console.log(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
     await approve_l2_erc20_tx.wait()
 
@@ -64,8 +68,11 @@ async function main() {
         L2_ERC20.address,
         receiverAddress,
         withdrawAmount,
-        2000000, //L2 gas limit
-        '0x' //data
+        100000, //L2 gas limit
+        '0x', //data
+        {
+            gasPrice: 0
+        }
     )
     console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
     await withdraw_L2_ERC20_tx.wait()
