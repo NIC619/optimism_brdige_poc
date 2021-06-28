@@ -49,8 +49,8 @@ async function main() {
     await L1_ETH_deposit_tx.wait()
 
     const [msgHash] = await watcher.getMessageHashesFromL1Tx(L1_ETH_deposit_tx.hash)
-    console.log(`L1_ETH_deposit_tx L2 tx hash: ${msgHash}`)
-    await watcher.getL2TransactionReceipt(msgHash)
+    const l2_receipt = await watcher.getL2TransactionReceipt(msgHash)
+    console.log(`L1_ETH_deposit_tx L2 tx hash: ${l2_receipt.transactionHash}`)
 
     const l2ETHBalanceAfter = await l2Wallet.getBalance()
     console.log(`L2 ETH balance afer: ${l2ETHBalanceAfter.toString()}`)
