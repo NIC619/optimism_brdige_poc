@@ -27,24 +27,24 @@ async function main() {
     // Deploy the paired ERC20 token to L2.
     console.log('Deploying L2 ERC20...')
     const L2_ERC20 = await factory__L2_ERC20.connect(l2Wallet).deploy(
+        L2_StandardBridge.address,
         'L2 Testing LON', //name
         'L2TL', //symbol
         {
             gasPrice: 0
         }
     )
-    console.log(L2_ERC20.deployTransaction.hash)
+    console.log(`L2 deploy tx hash: ${L2_ERC20.deployTransaction.hash}`)
     await L2_ERC20.deployTransaction.wait()
 
     console.log('Initializing L2 ERC20...')
     const init_tx = await L2_ERC20.connect(l2Wallet).initialize(
-        L2_StandardBridge.address,
         L1_ERC20.address,
         {
             gasPrice: 0
         }
     )
-    console.log(init_tx.hash)
+    console.log(`init_tx L2 tx hash: ${init_tx.hash}`)
     await init_tx.wait()
 
     // Checking L2 ERC20

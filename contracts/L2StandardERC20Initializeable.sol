@@ -10,14 +10,18 @@ contract L2StandardERC20Initializeable is IL2StandardERC20, ERC20 {
     address public l2Bridge;
 
     /**
+     * @param _l2Bridge Address of the L2 StandardBridge.
      * @param _name ERC20 name.
      * @param _symbol ERC20 symbol.
      */
     constructor(
+        address _l2Bridge,
         string memory _name,
         string memory _symbol
     )
-        ERC20(_name, _symbol) {}
+        ERC20(_name, _symbol) {
+        l2Bridge = _l2Bridge;
+    }
 
     modifier onlyL2Bridge {
         require(msg.sender == l2Bridge, "Only L2 Bridge can mint and burn");
@@ -25,18 +29,15 @@ contract L2StandardERC20Initializeable is IL2StandardERC20, ERC20 {
     }
 
     /**
-     * Initializes the whitelist.
-     * @param _l2Bridge Address of the L2 StandardBridge.
+     * Initializes the l1Token address.
      * @param _l1Token Address of the corresponding L1 token.
      */
     function initialize(
-        address _l2Bridge,
         address _l1Token
     )
         public
     {
-        require(l2Bridge == address(0), "Contract has already been initialized.");
-        l2Bridge = _l2Bridge;
+        require(l1Token == address(0), "Contract has already been initialized.");
         l1Token = _l1Token;
     }
 
