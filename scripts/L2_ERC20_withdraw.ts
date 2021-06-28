@@ -17,12 +17,12 @@ async function main() {
 
     // L1 messenger address depends on the deployment.
     const l1MessengerAddress = '0x4361d0F75A0186C05f971c566dC6bEa5957483fD' // Kovan
-    // L1 standard bridge address depends on the deployment.
-    const l1StandardBridgeAddress = '0x22F24361D548e5FaAfb36d1437839f080363982B' // Kovan
     // L2 messenger address is always the same.
     const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
+    // L2 standard bridge address is always the same.
+    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
 
-    const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
+    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
 
     // Tool that helps watches and waits for messages to be relayed between L1 and L2.
     const watcher = new Watcher({
@@ -46,43 +46,43 @@ async function main() {
 
 
     // Checking balance
-    const depositAmount = ethers.utils.parseUnits('300')
-    const l1Balance = await L1_ERC20.balanceOf(l1Wallet.address)
-    console.log(`Balance on L1: ${l1Balance.toString()}`)
-    if (l1Balance.lt(depositAmount)) {
-        throw new Error('L1 balance not enough')
+    const withdrawAmount = ethers.utils.parseUnits('450')
+    const l2Balance = await L2_ERC20.balanceOf(l1Wallet.address)
+    console.log(`Balance on L2: ${l2Balance.toString()}`)
+    if (l2Balance.lt(withdrawAmount)) {
+        throw new Error('L2 balance not enough')
     }
 
-    console.log('Approving L1 StandardBridge...')
-    const approve_l1_erc20_tx = await L1_ERC20.connect(l1Wallet).approve(L1_StandardBridge.address, depositAmount)
-    console.log(`approve_l1_erc20_tx L1 tx hash: ${approve_l1_erc20_tx.hash}`)
-    await approve_l1_erc20_tx.wait()
+    console.log('Approving L2 StandardBridge...')
+    const approve_l2_erc20_tx = await L2_ERC20.connect(l2Wallet).approve(L2_StandardBridge.address, withdrawAmount)
+    console.log(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
+    await approve_l2_erc20_tx.wait()
 
-    console.log('Depositing into L1 Standard Bridge...')
+    console.log('Withdrawing from L2...')
     const receiverAddress = '0xE3c19B6865f2602f30537309e7f8D011eF99C1E0'
-    const deposit_L1_ERC20_tx = await L1_StandardBridge.connect(l1Wallet).depositERC20To(
-        L1_ERC20.address,
+    const withdraw_L2_ERC20_tx = await L2_StandardBridge.connect(l2Wallet).withdrawTo(
         L2_ERC20.address,
         receiverAddress,
-        depositAmount,
+        withdrawAmount,
         2000000, //L2 gas limit
         '0x' //data
     )
-    console.log(`deposit_L1_ERC20_tx L1 tx hash: ${deposit_L1_ERC20_tx.hash}`)
-    await deposit_L1_ERC20_tx.wait()
+    console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
+    await withdraw_L2_ERC20_tx.wait()
 
-    // Wait for the message to be relayed to L2.
-    console.log('Waiting for deposit to be relayed to L2...')
-    const [msgHash] = await watcher.getMessageHashesFromL1Tx(deposit_L1_ERC20_tx.hash)
-    const l2_receipt = await watcher.getL2TransactionReceipt(msgHash)
-    console.log(`deposit_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
+    console.log('Need to wait for challenge period to end. You can query for withdraw tx receipt later.')
+    // // Wait for the message to be relayed to L1.
+    // console.log('Waiting for withdraw to be relayed to L2...')
+    // const [msgHash] = await watcher.getMessageHashesFromL1Tx(withdraw_L2_ERC20_tx.hash)
+    // const l2_receipt = await watcher.getL2TransactionReceipt(msgHash)
+    // console.log(`withdraw_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
 
-    // Checking balance
-    const l2Balance: BigNumber = await L2_ERC20.balanceOf(receiverAddress)
-    console.log(`Balance on L2: ${l2Balance.toString()}`)
-    if (!l2Balance.eq(depositAmount)) {
-        throw new Error('L2 balance does not match')
-    }
+    // // Checking balance
+    // const l1Balance: BigNumber = await L1_ERC20.balanceOf(receiverAddress)
+    // console.log(`Balance on L1: ${l1Balance.toString()}`)
+    // if (!l1Balance.eq(withdrawAmount)) {
+    //     throw new Error('L1 balance does not match')
+    // }
 }
 
 main()
