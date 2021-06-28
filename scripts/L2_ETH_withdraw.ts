@@ -78,14 +78,14 @@ async function main() {
     await withdraw_L2_ETH_tx.wait()
 
     console.log('Need to wait for challenge period to end. You can query for withdraw tx receipt later.')
-    // // Wait for the message to be relayed to L1.
+    // Wait for the message to be relayed to L1.
     // console.log('Waiting for withdraw to be relayed to L2...')
-    // const [msgHash] = await watcher.getMessageHashesFromL1Tx(withdraw_L2_ETH_tx.hash)
-    // const l2_receipt = await watcher.getL2TransactionReceipt(msgHash)
+    // const [msgHash] = await watcher.getMessageHashesFromL2Tx(withdraw_L2_ETH_tx.hash)
+    // const l2_receipt = await watcher.getL1TransactionReceipt(msgHash)
     // console.log(`withdraw_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
 
     // // Checking balance
-    // const l1Balance: BigNumber = await L1_ERC20.balanceOf(receiverAddress)
+    // const l1Balance: BigNumber = await ethers.provider.getBalance(receiverAddress)
     // console.log(`Balance on L1: ${l1Balance.toString()}`)
     // if (!l1Balance.eq(withdrawAmount)) {
     //     throw new Error('L1 balance does not match')

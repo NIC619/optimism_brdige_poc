@@ -39,6 +39,8 @@ async function main() {
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
+    const l1ERC20Address = '0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd' // Kovan LON
+    const L1_ERC20 = await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20', l1ERC20Address)
     const l2ERC20Address = '0x235d9B4249E9C9D705fAC6E98F7D21E58091220A'
     const L2_ERC20 = instance('ERC20', l2ERC20Address, l2RpcProvider, true)
 
@@ -77,11 +79,11 @@ async function main() {
     console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
     await withdraw_L2_ERC20_tx.wait()
 
-    console.log('Need to wait for challenge period to end. You can query for withdraw tx receipt later.')
-    // // Wait for the message to be relayed to L1.
+    // console.log('Need to wait for challenge period to end. You can query for withdraw tx receipt later.')
+    // Wait for the message to be relayed to L1.
     // console.log('Waiting for withdraw to be relayed to L2...')
-    // const [msgHash] = await watcher.getMessageHashesFromL1Tx(withdraw_L2_ERC20_tx.hash)
-    // const l2_receipt = await watcher.getL2TransactionReceipt(msgHash)
+    // const [msgHash] = await watcher.getMessageHashesFromL2Tx(withdraw_L2_ERC20_tx.hash)
+    // const l2_receipt = await watcher.getL1TransactionReceipt(msgHash)
     // console.log(`withdraw_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
 
     // // Checking balance
