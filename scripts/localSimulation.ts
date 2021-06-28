@@ -1,12 +1,8 @@
 import { ethers } from "hardhat"
 import { Watcher } from "@eth-optimism/watcher"
 import { getContractFactory, loadContract } from "@eth-optimism/contracts"
+import { factory } from "./utils"
 
-// Set up some contract factories. You can ignore this stuff.
-const factory = (name, ovm = false) => {
-    const artifact = require(`~/artifacts${ovm ? '-ovm' : ''}/contracts/${name}.sol/${name}.json`)
-    return new ethers.ContractFactory(artifact.abi, artifact.bytecode)
-}
 const factory__L1_ERC20 = factory('ERC20')
 const factory__L2_ERC20 = getContractFactory('L2StandardERC20', undefined, true)
 

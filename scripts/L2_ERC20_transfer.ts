@@ -1,9 +1,5 @@
 import { ethers } from "hardhat"
-
-const instance = (name, address, provider?, ovm = false) => {
-    const artifact = require(`~/artifacts${ovm ? '-ovm' : ''}/contracts/${name}.sol/${name}.json`)
-    return new ethers.Contract(address, artifact.abi, provider)
-}
+import { instance } from "./utils"
 
 async function main() {
     // Set up our RPC provider connections.
