@@ -20,28 +20,66 @@ async function main() {
     const l2RpcProviderUrl = 'https://kovan.optimism.io'
     const l1StateCommitmentChainAddress = '0xa2487713665AC596b0b3E4881417f276834473d2'
     const l2CrossDomainMessengerAddress = '0x4200000000000000000000000000000000000007'
-    const l2TransactionHash = '0x58fc194045e248f8a9589f68018bff9ee9cdb3f658f91c87300f08df62e131ee'
+    const l2TransactionHash = '0xf5f8d36370b0ead3eea502eb09911ae02c57c90a5b7b88bbf4eb7d73aff77c37'
 
-    const messagePairs = await getMessagesAndProofsForL2Transaction(
-        l1RpcProviderUrl,
-        l2RpcProviderUrl,
-        l1StateCommitmentChainAddress,
-        l2CrossDomainMessengerAddress,
-        l2TransactionHash
-    )
+    console.log(`searching for messages in transaction: ${l2TransactionHash}`)
+    let messagePairs: any[]
+    while (true) {
+        try {
+            messagePairs = await getMessagesAndProofsForL2Transaction(
+                l1RpcProviderUrl,
+                l2RpcProviderUrl,
+                l1StateCommitmentChainAddress,
+                l2CrossDomainMessengerAddress,
+                l2TransactionHash
+            )
+            break
+        } catch (err) {
+            if (err.message.includes('unable to find state root batch for tx')) {
+                console.log(`no state root batch for tx yet, trying again in 5s...`)
+                await sleep(5000)
+            } else {
+                throw err
+            }
+        }
+    }
 
-    // console.log(messagePairs)
-    console.log(`${messagePairs.length} messages included in L2 tx: ${l2TransactionHash}`)
-    console.log('Relaying messages...')
-    for (const { message, proof } of messagePairs) {
-        const relay_tx = await L1_CrossDomainMessenger.connect(l1Wallet).relayMessage(
-            message.target,
-            message.sender,
-            message.message,
-            message.messageNonce,
-            proof
-        )
-        console.log(`relay_tx L1 tx hash: ${relay_tx.hash}`)
+    console.log(`Found ${messagePairs.length} messages`)
+    for (let i = 0; i < messagePairs.length; i++) {
+        console.log(`Relaying message ${i + 1}/${messagePairs.length}`)
+        const { message, proof } = messagePairs[i]
+        while (true) {
+            try {
+                const result = await L1_CrossDomainMessenger.connect(l1Wallet).relayMessage(
+                    message.target,
+                    message.sender,
+                    message.message,
+                    message.messageNonce,
+                    proof
+                )
+                await result.wait()
+                console.log(
+                    `relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${result.hash
+                    }`
+                )
+                break
+            } catch (err) {
+                // Kovan provider does not provide error message if tx reverts
+                // if (err.message.includes('execution failed due to an exception')) {
+                //     console.log(`fraud proof may not be elapsed, trying again in 5s...`)
+                //     await sleep(5000)
+                // } else if (err.message.includes('message has already been received')) {
+                //     console.log(
+                //         `message ${i + 1}/${messagePairs.length
+                //         } was relayed by someone else`
+                //     )
+                //     break
+                // } else {
+                //     throw err
+                // }
+                console.log(`Relay message ${i + 1}/${messagePairs.length} failed`)
+            }
+        }
     }
 }
 
