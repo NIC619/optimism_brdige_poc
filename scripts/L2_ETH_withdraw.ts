@@ -1,13 +1,14 @@
-import { ethers } from "hardhat"
+import { config, ethers } from "hardhat"
 import { Watcher } from "@eth-optimism/watcher"
 import { loadContract } from "@eth-optimism/contracts"
-import { BigNumber } from "ethers"
 import { instance } from "./utils"
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
     const l1RpcProvider = ethers.provider
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider('https://kovan.optimism.io')
+    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
 
     const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
     if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
@@ -16,11 +17,11 @@ async function main() {
     const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
 
     // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = '0x4361d0F75A0186C05f971c566dC6bEa5957483fD' // Kovan
+    const l1MessengerAddress = conf.l1MessengerAddress // Kovan
     // L2 messenger address is always the same.
-    const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
+    const l2MessengerAddress = conf.l2MessengerAddress
     // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
+    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
     const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
 
@@ -39,7 +40,7 @@ async function main() {
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
-    const l2ETHAddress = '0x4200000000000000000000000000000000000006'
+    const l2ETHAddress = conf.l2ETHAddress
     const L2_ETH = instance('ERC20', l2ETHAddress, l2RpcProvider, true)
 
 
@@ -56,7 +57,7 @@ async function main() {
         L2_StandardBridge.address,
         withdrawAmount,
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`approve_l2_ETH_tx L1 tx hash: ${approve_l2_ETH_tx.hash}`)
@@ -71,7 +72,7 @@ async function main() {
         100000, //L2 gas limit
         '0x', //data
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`withdraw_L2_ETH_tx L2 tx hash: ${withdraw_L2_ETH_tx.hash}`)

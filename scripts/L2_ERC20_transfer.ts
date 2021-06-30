@@ -1,9 +1,11 @@
-import { ethers } from "hardhat"
+import { config, ethers } from "hardhat"
 import { instance } from "./utils"
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider('https://kovan.optimism.io')
+    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
 
     const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
     if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
@@ -24,7 +26,7 @@ async function main() {
         receiverAddress,
         ethers.utils.parseUnits('150'),
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(L2_transfer_ERC20_tx.hash)

@@ -1,13 +1,14 @@
-import { ethers } from "hardhat"
+import { config, ethers } from "hardhat"
 import { Watcher } from "@eth-optimism/watcher"
 import { loadContract } from "@eth-optimism/contracts"
-import { BigNumber } from "ethers"
 import { instance } from "./utils"
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
     const l1RpcProvider = ethers.provider
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider('https://kovan.optimism.io')
+    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
 
     const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
     if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
@@ -16,11 +17,11 @@ async function main() {
     const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
 
     // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = '0x4361d0F75A0186C05f971c566dC6bEa5957483fD' // Kovan
+    const l1MessengerAddress = conf.l1MessengerAddress
     // L2 messenger address is always the same.
-    const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
+    const l2MessengerAddress = conf.l2MessengerAddress
     // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
+    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
     const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
 

@@ -1,12 +1,14 @@
-import { ethers } from "hardhat"
+import { config, ethers } from "hardhat"
 import { loadContract } from "@eth-optimism/contracts"
 import { factory } from "./utils"
 
 const factory__L2_ERC20 = factory('L2StandardERC20Initializeable', true)
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider('https://kovan.optimism.io')
+    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
 
     const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
     if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
@@ -14,7 +16,7 @@ async function main() {
     const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
 
     // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
+    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
     const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
 
@@ -31,7 +33,7 @@ async function main() {
         'L2 Testing LON', //name
         'L2TL', //symbol
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`L2 deploy tx hash: ${L2_ERC20.deployTransaction.hash}`)
@@ -41,7 +43,7 @@ async function main() {
     const init_tx = await L2_ERC20.connect(l2Wallet).initialize(
         L1_ERC20.address,
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`init_tx L2 tx hash: ${init_tx.hash}`)

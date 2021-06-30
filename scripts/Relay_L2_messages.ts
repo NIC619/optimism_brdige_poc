@@ -4,6 +4,8 @@ import { sleep } from '@eth-optimism/core-utils'
 import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
     const l1RpcProvider = ethers.provider
 
@@ -13,13 +15,13 @@ async function main() {
     const l1Wallet = new ethers.Wallet(deployerPrivateKey, ethers.provider)
 
     // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = '0x4361d0F75A0186C05f971c566dC6bEa5957483fD' // Kovan
+    const l1MessengerAddress = conf.l1MessengerAddress // Kovan
     const L1_CrossDomainMessenger = loadContract('OVM_L1CrossDomainMessenger', l1MessengerAddress, l1RpcProvider)
 
     const l1RpcProviderUrl = (config.networks.kovan as any).url
-    const l2RpcProviderUrl = 'https://kovan.optimism.io'
-    const l1StateCommitmentChainAddress = '0xa2487713665AC596b0b3E4881417f276834473d2'
-    const l2CrossDomainMessengerAddress = '0x4200000000000000000000000000000000000007'
+    const l2RpcProviderUrl = conf.optimismURL
+    const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
+    const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
     const l2TransactionHash = '0xf5f8d36370b0ead3eea502eb09911ae02c57c90a5b7b88bbf4eb7d73aff77c37'
 
     console.log(`searching for messages in transaction: ${l2TransactionHash}`)

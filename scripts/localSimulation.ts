@@ -1,4 +1,4 @@
-import { ethers } from "hardhat"
+import { config, ethers } from "hardhat"
 import { Watcher } from "@eth-optimism/watcher"
 import { getContractFactory, loadContract } from "@eth-optimism/contracts"
 import { factory } from "./utils"
@@ -7,6 +7,8 @@ const factory__L1_ERC20 = factory('ERC20')
 const factory__L2_ERC20 = getContractFactory('L2StandardERC20', undefined, true)
 
 async function main() {
+    const conf: any = config.networks.kovan
+
     // Set up our RPC provider connections.
     const l1RpcProvider = new ethers.providers.JsonRpcProvider('http://localhost:9545')
     const l2RpcProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
@@ -23,9 +25,9 @@ async function main() {
     // L1 standard bridge address depends on the deployment, this is default for our local deployment.
     const l1StandardBridgeAddress = '0x851356ae760d987E095750cCeb3bC6014560891C'
     // L2 messenger address is always the same.
-    const l2MessengerAddress = '0x4200000000000000000000000000000000000007'
+    const l2MessengerAddress = conf.l2MessengerAddress
     // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = '0x4200000000000000000000000000000000000010'
+    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
     const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
     const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)

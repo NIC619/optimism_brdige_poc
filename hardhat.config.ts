@@ -27,7 +27,14 @@ module.exports = {
     kovan: {
       chainId: 42,
       url: "",
-      accounts
+      optimismURL: 'https://kovan.optimism.io',
+      accounts,
+      l2ETHAddress: '0x4200000000000000000000000000000000000006',
+      l1MessengerAddress: '0x4361d0F75A0186C05f971c566dC6bEa5957483fD',
+      l2MessengerAddress: '0x4200000000000000000000000000000000000007',
+      l1StandardBridgeAddress: '0x22F24361D548e5FaAfb36d1437839f080363982B',
+      l2StandardBridgeAddress: '0x4200000000000000000000000000000000000010',
+      l1StateCommitmentChainAddress: '0xa2487713665AC596b0b3E4881417f276834473d2',
     },
     // Add this network to your config!
     optimism: {
