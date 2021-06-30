@@ -82,7 +82,7 @@ async function main() {
     // Checking balance
     const l2Balance: BigNumber = await L2_ERC20.balanceOf(receiverAddress)
     console.log(`Balance on L2: ${l2Balance.toString()}`)
-    if (!l2Balance.eq(depositAmount)) {
+    if (!l2Balance.gte(depositAmount)) {
         throw new Error("L2 balance does not match")
     }
 }
