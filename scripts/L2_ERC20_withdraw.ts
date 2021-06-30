@@ -46,7 +46,7 @@ async function main() {
 
 
     // Checking balance
-    const withdrawAmount = ethers.utils.parseUnits('50')
+    const withdrawAmount = ethers.utils.parseUnits('10')
     const l2Balance = await L2_ERC20.balanceOf(l1Wallet.address)
     console.log(`Balance on L2: ${l2Balance.toString()}`)
     if (l2Balance.lt(withdrawAmount)) {
@@ -58,7 +58,7 @@ async function main() {
         L2_StandardBridge.address,
         withdrawAmount,
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
@@ -73,7 +73,7 @@ async function main() {
         100000, //L2 gas limit
         '0x', //data
         {
-            gasPrice: 0
+            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
         }
     )
     console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
