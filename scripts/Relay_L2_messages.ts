@@ -1,7 +1,7 @@
 import { config, ethers } from "hardhat"
 import { loadContract } from "@eth-optimism/contracts"
-import { sleep } from '@eth-optimism/core-utils'
-import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
+import { sleep } from "@eth-optimism/core-utils"
+import { getMessagesAndProofsForL2Transaction } from "@eth-optimism/message-relayer"
 
 async function main() {
     const conf: any = config.networks.kovan
@@ -16,13 +16,13 @@ async function main() {
 
     // L1 messenger address depends on the deployment.
     const l1MessengerAddress = conf.l1MessengerAddress // Kovan
-    const L1_CrossDomainMessenger = loadContract('OVM_L1CrossDomainMessenger', l1MessengerAddress, l1RpcProvider)
+    const L1_CrossDomainMessenger = loadContract("OVM_L1CrossDomainMessenger", l1MessengerAddress, l1RpcProvider)
 
     const l1RpcProviderUrl = (config.networks.kovan as any).url
     const l2RpcProviderUrl = conf.optimismURL
     const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
     const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
-    const l2TransactionHash = '0xf5f8d36370b0ead3eea502eb09911ae02c57c90a5b7b88bbf4eb7d73aff77c37'
+    const l2TransactionHash = "0xf5f8d36370b0ead3eea502eb09911ae02c57c90a5b7b88bbf4eb7d73aff77c37"
 
     console.log(`searching for messages in transaction: ${l2TransactionHash}`)
     let messagePairs: any[]
@@ -37,7 +37,7 @@ async function main() {
             )
             break
         } catch (err) {
-            if (err.message.includes('unable to find state root batch for tx')) {
+            if (err.message.includes("unable to find state root batch for tx")) {
                 console.log(`no state root batch for tx yet, trying again in 5s...`)
                 await sleep(5000)
             } else {
@@ -67,10 +67,10 @@ async function main() {
                 break
             } catch (err) {
                 // Kovan provider does not provide error message if tx reverts
-                // if (err.message.includes('execution failed due to an exception')) {
+                // if (err.message.includes("execution failed due to an exception")) {
                 //     console.log(`fraud proof may not be elapsed, trying again in 5s...`)
                 //     await sleep(5000)
-                // } else if (err.message.includes('message has already been received')) {
+                // } else if (err.message.includes("message has already been received")) {
                 //     console.log(
                 //         `message ${i + 1}/${messagePairs.length
                 //         } was relayed by someone else`

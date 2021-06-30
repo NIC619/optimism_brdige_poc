@@ -2,7 +2,7 @@ import { config, ethers } from "hardhat"
 import { loadContract } from "@eth-optimism/contracts"
 import { factory } from "./utils"
 
-const factory__L2_ERC20 = factory('L2StandardERC20Initializeable', true)
+const factory__L2_ERC20 = factory("L2StandardERC20Initializeable", true)
 
 async function main() {
     const conf: any = config.networks.kovan
@@ -18,32 +18,32 @@ async function main() {
     // L2 standard bridge address is always the same.
     const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
-    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
+    const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
 
-    const l1ERC20Address = '0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd' // Kovan LON
-    const L1_ERC20 = await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20', l1ERC20Address)
+    const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
+    const L1_ERC20 = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", l1ERC20Address)
 
     const l2ETHBalanceBefore = await l2Wallet.getBalance()
     console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)
 
     // Deploy the paired ERC20 token to L2.
-    console.log('Deploying L2 ERC20...')
+    console.log("Deploying L2 ERC20...")
     const L2_ERC20 = await factory__L2_ERC20.connect(l2Wallet).deploy(
         L2_StandardBridge.address,
-        'L2 Testing LON', //name
-        'L2TL', //symbol
+        "L2 Testing LON", //name
+        "L2TL", //symbol
         {
-            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
+            gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
     )
     console.log(`L2 deploy tx hash: ${L2_ERC20.deployTransaction.hash}`)
     await L2_ERC20.deployTransaction.wait()
 
-    console.log('Initializing L2 ERC20...')
+    console.log("Initializing L2 ERC20...")
     const init_tx = await L2_ERC20.connect(l2Wallet).initialize(
         L1_ERC20.address,
         {
-            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
+            gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
     )
     console.log(`init_tx L2 tx hash: ${init_tx.hash}`)
@@ -52,11 +52,11 @@ async function main() {
     // Checking L2 ERC20
     const erc20L1TokenStored = await L2_ERC20.callStatic.l1Token()
     if (erc20L1TokenStored !== L1_ERC20.address) {
-        throw new Error('L1 ERC20 token address was not correctly set')
+        throw new Error("L1 ERC20 token address was not correctly set")
     }
     const erc20L2TokenBridgeStored = await L2_ERC20.callStatic.l2Bridge()
     if (erc20L2TokenBridgeStored !== L2_StandardBridge.address) {
-        throw new Error('L2 bridge address was not correctly set')
+        throw new Error("L2 bridge address was not correctly set")
     }
 }
 

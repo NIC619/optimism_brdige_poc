@@ -23,7 +23,7 @@ async function main() {
     // L2 standard bridge address is always the same.
     const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 
-    const L2_StandardBridge = loadContract('OVM_L2StandardBridge', l2StandardBridgeAddress, l2RpcProvider)
+    const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
 
     // Tool that helps watches and waits for messages to be relayed between L1 and L2.
     const watcher = new Watcher({
@@ -40,49 +40,49 @@ async function main() {
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
-    const l1ERC20Address = '0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd' // Kovan LON
-    const L1_ERC20 = await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20', l1ERC20Address)
-    const l2ERC20Address = '0x235d9B4249E9C9D705fAC6E98F7D21E58091220A'
-    const L2_ERC20 = instance('ERC20', l2ERC20Address, l2RpcProvider, true)
+    const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
+    const L1_ERC20 = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", l1ERC20Address)
+    const l2ERC20Address = "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
+    const L2_ERC20 = instance("ERC20", l2ERC20Address, l2RpcProvider, true)
 
 
     // Checking balance
-    const withdrawAmount = ethers.utils.parseUnits('10')
+    const withdrawAmount = ethers.utils.parseUnits("10")
     const l2Balance = await L2_ERC20.balanceOf(l1Wallet.address)
     console.log(`Balance on L2: ${l2Balance.toString()}`)
     if (l2Balance.lt(withdrawAmount)) {
-        throw new Error('L2 balance not enough')
+        throw new Error("L2 balance not enough")
     }
 
-    console.log('Approving L2 StandardBridge...')
+    console.log("Approving L2 StandardBridge...")
     const approve_l2_erc20_tx = await L2_ERC20.connect(l2Wallet).approve(
         L2_StandardBridge.address,
         withdrawAmount,
         {
-            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
+            gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
     )
     console.log(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
     await approve_l2_erc20_tx.wait()
 
-    console.log('Withdrawing from L2...')
-    const receiverAddress = '0xE3c19B6865f2602f30537309e7f8D011eF99C1E0'
+    console.log("Withdrawing from L2...")
+    const receiverAddress = "0xE3c19B6865f2602f30537309e7f8D011eF99C1E0"
     const withdraw_L2_ERC20_tx = await L2_StandardBridge.connect(l2Wallet).withdrawTo(
         L2_ERC20.address,
         receiverAddress,
         withdrawAmount,
         100000, //L2 gas limit
-        '0x', //data
+        "0x", //data
         {
-            gasPrice: ethers.utils.parseUnits('0.015', 'gwei')
+            gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
     )
     console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
     await withdraw_L2_ERC20_tx.wait()
 
-    // console.log('Need to wait for challenge period to end. You can query for withdraw tx receipt later.')
+    // console.log("Need to wait for challenge period to end. You can query for withdraw tx receipt later.")
     // Wait for the message to be relayed to L1.
-    // console.log('Waiting for withdraw to be relayed to L2...')
+    // console.log("Waiting for withdraw to be relayed to L2...")
     // const [msgHash] = await watcher.getMessageHashesFromL2Tx(withdraw_L2_ERC20_tx.hash)
     // const l2_receipt = await watcher.getL1TransactionReceipt(msgHash)
     // console.log(`withdraw_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
@@ -91,7 +91,7 @@ async function main() {
     // const l1Balance: BigNumber = await L1_ERC20.balanceOf(receiverAddress)
     // console.log(`Balance on L1: ${l1Balance.toString()}`)
     // if (!l1Balance.eq(withdrawAmount)) {
-    //     throw new Error('L1 balance does not match')
+    //     throw new Error("L1 balance does not match")
     // }
 }
 

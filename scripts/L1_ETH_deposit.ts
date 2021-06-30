@@ -18,11 +18,11 @@ async function main() {
     // L1 messenger address depends on the deployment.
     const l1MessengerAddress = conf.l1MessengerAddress // Kovan
     // L1 standard bridge address depends on the deployment.
-    const l1StandardBridgeAddress = conf.l1StandardBridgeAddress // Kovan
+    const l1StandardBridgeAddress = "0x22F24361D548e5FaAfb36d1437839f080363982B" // Kovan
     // L2 messenger address is always the same.
-    const l2MessengerAddress = conf.l2MessengerAddress
+    const l2MessengerAddress = "0x4200000000000000000000000000000000000007"
 
-    const L1_StandardBridge = loadContract('OVM_L1StandardBridge', l1StandardBridgeAddress, l1RpcProvider)
+    const L1_StandardBridge = loadContract("OVM_L1StandardBridge", l1StandardBridgeAddress, l1RpcProvider)
 
     // Tool that helps watches and waits for messages to be relayed between L1 and L2.
     const watcher = new Watcher({
@@ -37,14 +37,14 @@ async function main() {
     })
 
     // Deploy the paired ERC20 token to L2.
-    console.log('Depositing L1 ETH...')
+    console.log("Depositing L1 ETH...")
     const l2ETHBalanceBefore = await l2Wallet.getBalance()
     console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)
     const L1_ETH_deposit_tx = await L1_StandardBridge.connect(l1Wallet).depositETH(
         2000000, // L2 gas
-        '0x',
+        "0x",
         {
-            value: ethers.utils.parseUnits('1')
+            value: ethers.utils.parseUnits("1")
         }
     )
     console.log(`L1_ETH_deposit_tx L1 tx hash: ${L1_ETH_deposit_tx.hash}`)
