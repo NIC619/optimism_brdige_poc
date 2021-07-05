@@ -42,7 +42,7 @@ async function main() {
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
     const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
-    const L1_ERC20 = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", l1ERC20Address)
+    const L1_ERC20 = instance("ERC20", l1ERC20Address, l1RpcProvider)
     const l2ERC20Address = "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
     const L2_ERC20 = instance("ERC20", l2ERC20Address, l2RpcProvider, true)
 
@@ -50,7 +50,7 @@ async function main() {
     // Checking balance
     const depositAmount = ethers.utils.parseUnits("500")
     const l1Balance = await L1_ERC20.balanceOf(l1Wallet.address)
-    console.log(`Balance on L1: ${l1Balance.toString()}`)
+    console.log(`ERC20 Balance on L1: ${l1Balance.toString()}`)
     if (l1Balance.lt(depositAmount)) {
         throw new Error("L1 balance not enough")
     }
@@ -81,7 +81,7 @@ async function main() {
 
     // Checking balance
     const l2Balance: BigNumber = await L2_ERC20.balanceOf(receiverAddress)
-    console.log(`Balance on L2: ${l2Balance.toString()}`)
+    console.log(`ERC20 Balance on L2: ${l2Balance.toString()}`)
     if (!l2Balance.gte(depositAmount)) {
         throw new Error("L2 balance does not match")
     }

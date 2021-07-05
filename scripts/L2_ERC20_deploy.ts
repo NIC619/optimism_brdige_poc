@@ -21,7 +21,6 @@ async function main() {
     const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
 
     const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
-    const L1_ERC20 = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20", l1ERC20Address)
 
     const l2ETHBalanceBefore = await l2Wallet.getBalance()
     console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)
@@ -41,7 +40,7 @@ async function main() {
 
     console.log("Initializing L2 ERC20...")
     const init_tx = await L2_ERC20.connect(l2Wallet).initialize(
-        L1_ERC20.address,
+        l1ERC20Address,
         {
             gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
@@ -51,7 +50,7 @@ async function main() {
 
     // Checking L2 ERC20
     const erc20L1TokenStored = await L2_ERC20.callStatic.l1Token()
-    if (erc20L1TokenStored !== L1_ERC20.address) {
+    if (erc20L1TokenStored !== l1ERC20Address) {
         throw new Error("L1 ERC20 token address was not correctly set")
     }
     const erc20L2TokenBridgeStored = await L2_ERC20.callStatic.l2Bridge()
