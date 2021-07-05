@@ -29,6 +29,7 @@ module.exports = {
       url: "",
       optimismURL: "https://kovan.optimism.io",
       accounts,
+      blocktime: 15,
       l2ETHAddress: "0x4200000000000000000000000000000000000006",
       l1MessengerAddress: "0x4361d0F75A0186C05f971c566dC6bEa5957483fD",
       l2MessengerAddress: "0x4200000000000000000000000000000000000007",

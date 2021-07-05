@@ -85,6 +85,7 @@ async function main() {
     if (!l2Balance.gte(depositAmount)) {
         throw new Error("L2 balance does not match")
     }
+    console.log("Successfully deposit ERC20 from L1")
 }
 
 main()

@@ -77,6 +77,7 @@ async function main() {
     )
     console.log(`withdraw_L2_ERC20_tx L2 tx hash: ${withdraw_L2_ERC20_tx.hash}`)
     await withdraw_L2_ERC20_tx.wait()
+    console.log("Successfully submit withdrawal of ERC20 from L2, now wait for challenge period to pass")
 
     // console.log("Need to wait for challenge period to end. You can query for withdraw tx receipt later.")
     // Wait for the message to be relayed to L1.
