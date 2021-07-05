@@ -54,8 +54,8 @@ async function cycle() {
     // Initial balances.
     console.log(`L1 ETH balance: ${ethers.utils.formatUnits(await l1Wallet.getBalance(), 18)}`)
     console.log(`L2 ETH balance: ${ethers.utils.formatUnits(await l2Wallet.getBalance(), 18)}`)
-    console.log(`ERC20 Balance on L1: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
-    console.log(`ERC20 Balance on L2: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L1 ERC20 Balance: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L2 ERC20 Balance: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
 
     /**
     * L1: Deposit ERC20
@@ -77,8 +77,8 @@ async function cycle() {
         L2_ERC20.address,
         receiverAddress,
         depositAmount,
-        2000000, //L2 gas limit
-        "0x" //data
+        2000000, // L2 gas limit
+        "0x" // data
     )
     console.log(`deposit_L1_ERC20_tx L1 tx hash: ${deposit_L1_ERC20_tx.hash}`)
     await deposit_L1_ERC20_tx.wait()
@@ -90,8 +90,8 @@ async function cycle() {
     console.log(`deposit_L1_ERC20_tx L2 tx hash: ${l2_receipt.transactionHash}`)
     console.log("Successfully deposit ERC20 from L1")
 
-    console.log(`ERC20 Balance on L1: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
-    console.log(`ERC20 Balance on L2: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L1 ERC20 Balance: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L2 ERC20 Balance: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
 
     /**
     * L2: Withdraw ERC20
@@ -117,8 +117,8 @@ async function cycle() {
         L2_ERC20.address,
         receiverAddress,
         withdrawAmount,
-        100000, //L2 gas limit
-        "0x", //data
+        100000, // L1 gas limit
+        "0x", // data
         {
             gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
@@ -137,7 +137,7 @@ async function cycle() {
     console.log("-------------------------------------------")
     const l2TransactionHash = withdraw_L2_ERC20_tx.hash
 
-    console.log(`searching for messages in transaction: ${l2TransactionHash}`)
+    console.log(`Searching for messages in transaction: ${l2TransactionHash}`)
     let messagePairs: any[]
     while (true) {
         try {
@@ -151,7 +151,7 @@ async function cycle() {
             break
         } catch (err) {
             if (err.message.includes("unable to find state root batch for tx")) {
-                console.log(`no state root batch for tx yet, trying again in ${BLOCKTIME_SECONDS}s...`)
+                console.log(`No state root batch for tx yet, trying again in ${BLOCKTIME_SECONDS}s...`)
                 await sleep(BLOCKTIME_SECONDS)
             } else {
                 throw err
@@ -174,18 +174,18 @@ async function cycle() {
                 )
                 await result.wait()
                 console.log(
-                    `relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${result.hash
+                    `Relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${result.hash
                     }`
                 )
                 break
             } catch (err) {
                 // Kovan provider does not provide error message if tx reverts
                 // if (err.message.includes("execution failed due to an exception")) {
-                //     console.log(`fraud proof may not be elapsed, trying again in 5s...`)
+                //     console.log(`Fraud proof may not be elapsed, trying again in 5s...`)
                 //     await sleep(5000)
                 // } else if (err.message.includes("message has already been received")) {
                 //     console.log(
-                //         `message ${i + 1}/${messagePairs.length
+                //         `Message ${i + 1}/${messagePairs.length
                 //         } was relayed by someone else`
                 //     )
                 //     break
@@ -197,8 +197,13 @@ async function cycle() {
         }
     }
     console.log("Successfully relay ERC20 withdrawal")
-    console.log(`ERC20 Balance on L1: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
-    console.log(`ERC20 Balance on L2: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L1 ETH balance: ${ethers.utils.formatUnits(await l1Wallet.getBalance(), 18)}`)
+    console.log(`L2 ETH balance: ${ethers.utils.formatUnits(await l2Wallet.getBalance(), 18)}`)
+    console.log(`L1 ERC20 Balance: ${ethers.utils.formatUnits(await L1_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log(`L2 ERC20 Balance: ${ethers.utils.formatUnits(await L2_ERC20.balanceOf(l1Wallet.address), 18)}`)
+    console.log("-------------------------------------------")
+    console.log("| Cycle completes                         |")
+    console.log("-------------------------------------------")
 }
 
 async function main() {

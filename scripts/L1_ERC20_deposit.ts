@@ -50,7 +50,7 @@ async function main() {
     // Checking balance
     const depositAmount = ethers.utils.parseUnits("500")
     const l1Balance = await L1_ERC20.balanceOf(l1Wallet.address)
-    console.log(`ERC20 Balance on L1: ${l1Balance.toString()}`)
+    console.log(`L1 ERC20 Balance: ${l1Balance.toString()}`)
     if (l1Balance.lt(depositAmount)) {
         throw new Error("L1 balance not enough")
     }
@@ -81,7 +81,7 @@ async function main() {
 
     // Checking balance
     const l2Balance: BigNumber = await L2_ERC20.balanceOf(receiverAddress)
-    console.log(`ERC20 Balance on L2: ${l2Balance.toString()}`)
+    console.log(`L2 ERC20 Balance: ${l2Balance.toString()}`)
     if (!l2Balance.gte(depositAmount)) {
         throw new Error("L2 balance does not match")
     }
