@@ -26,9 +26,9 @@ For further information, you can review our [documentation on L1 <> L2 Communica
 
 ## Message Passing in this Example
 
-After we deposit token into L1 ERC20 Gateway contract (`L1_ERC20Gateway.deposit(amount)`), we wait for the message to relayed by the `L2CrossDomainMessenger` and use the [`@eth-optimism/watcher`](https://www.npmjs.com/package/@eth-optimism/watcher) to retrieve the hash of message of the transaction (`tx2`).
+After we deposit token into L1 StandardBridge contract (`L1_StandardBridge.depositERC20()`), we wait for the message to relayed by the `L2CrossDomainMessenger` and use the [`@eth-optimism/watcher`](https://www.npmjs.com/package/@eth-optimism/watcher) to retrieve the hash of message of the (L1) transaction.
 
-Likewise, after we withdraw token from L2 ERC20 contract (`L2_ERC20.withdraw(amount)`), we wait for a second message to be relayed, but this time by the `L1CrossDomainMessenger` so that we can retrieve the hash of message of the transaction (`tx3`).
+Likewise, after we withdraw token from L2 StandardBridge contract (`L2_StandardBridge.withdraw()`), we wait for a second message to be relayed, but this time by the `L1CrossDomainMessenger` so that we can retrieve the hash of message of the (L2) transaction.
 
 ## Running the Example
 
@@ -38,6 +38,10 @@ Run the following commands to get started:
 yarn install
 yarn compile
 ```
+
+Next you can choose to either run the example in local environment or Kovan testnet.
+
+### 1. Running the example in local environment
 
 Make sure you have the local L1/L2 system running (open a second terminal for this):
 
@@ -74,3 +78,13 @@ Waiting for withdrawal to be relayed to L1...
 Balance on L1: 1234
 Balance on L2: 0
 ```
+
+### 2. Running the example in Kovan testnet
+
+Run the example file:
+
+```sh
+npx hardhat run ./scripts/L1_L2_cycle.ts --network kovan
+```
+
+This script will automatically execute the deposit/withdraw flow in cycle. Since the challenge period is not instant in testnet, you will have to wait for challenge period to end before relaying your withdrawal message. This currently will take 60 blocks in Kovan (see `FRAUD_PROOF_WINDOW` in [StateCommitment Chain](https://kovan.etherscan.io/address/0xa2487713665AC596b0b3E4881417f276834473d2#readContract)).
