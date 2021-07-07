@@ -243,20 +243,20 @@ async function cycle() {
 
 async function main() {
     // Checking L2 ERC20
-    // const erc20L1TokenStored = await L2_ERC20.callStatic.l1Token()
-    // if (erc20L1TokenStored !== L1_ERC20.address) {
-    //     throw new Error("L1 ERC20 token address was not correctly set")
-    // }
-    // const erc20L2TokenBridgeStored = await L2_ERC20.callStatic.l2Bridge()
-    // if (erc20L2TokenBridgeStored !== L2_StandardBridge.address) {
-    //     throw new Error("L2 bridge address was not correctly set")
-    // }
+    const erc20L1TokenStored = await L2_ERC20.callStatic.l1Token()
+    if (erc20L1TokenStored !== L1_ERC20.address) {
+        throw new Error("L1 ERC20 token address was not correctly set")
+    }
+    const erc20L2TokenBridgeStored = await L2_ERC20.callStatic.l2Bridge()
+    if (erc20L2TokenBridgeStored !== L2_StandardBridge.address) {
+        throw new Error("L2 bridge address was not correctly set")
+    }
 
     await checkPendingWithdrawals()
 
-    // while (true) {
-    //     await cycle()
-    // }
+    while (true) {
+        await cycle()
+    }
 }
 
 main()
