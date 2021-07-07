@@ -3,9 +3,9 @@ import * as path from "path"
 import { config, ethers } from "hardhat"
 import { loadContract } from "@eth-optimism/contracts"
 import { sleep } from "@eth-optimism/core-utils"
-import { getMessagesAndProofsForL2Transaction, getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
+import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
 import { Watcher } from "@eth-optimism/watcher"
-import { instance } from "./utils"
+import { instance, relayL2Message } from "./utils"
 
 const conf: any = config.networks.kovan
 
@@ -31,8 +31,6 @@ const l1StandardBridgeAddress = conf.l1StandardBridgeAddress // Kovan
 const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
 const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
-
-const L1_CrossDomainMessenger = loadContract("OVM_L1CrossDomainMessenger", l1MessengerAddress, l1RpcProvider)
 
 const L1_StandardBridge = loadContract("OVM_L1StandardBridge", l1StandardBridgeAddress, l1RpcProvider)
 const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
@@ -128,7 +126,10 @@ async function checkPendingWithdrawals() {
             const L1_tx_receipt = await watcher.getL1TransactionReceipt(L2_tx_msg_hash, false)
             if (L1_tx_receipt == undefined) {
                 console.log(`L2 withdraw tx: ${L2_tx_hash} is ready to be relayed`)
-                pendingWithdrawals[L2_tx_hash]["status"] = "Ready to be relayed"
+                await relayL2Message(L2_tx_hash, l1Wallet)
+                console.log(`Successfully relayed L2 withdraw tx: ${L2_tx_hash}`)
+                console.log("Dropping it from pendingWithdrawals file...")
+                delete pendingWithdrawals[L2_tx_hash]
             } else {
                 // TODO: related to previous TODO, should we check if the L1 withdraw tx succeed?
                 console.log(`L2 withdraw tx: ${L2_tx_hash} is already relayed by L1 tx: ${L1_tx_receipt.transactionHash}`)
@@ -228,65 +229,8 @@ async function cycle() {
     console.log("-------------------------------------------")
     const l2TransactionHash = withdraw_L2_ERC20_tx.hash
 
-    console.log(`Searching for messages in transaction: ${l2TransactionHash}`)
-    let messagePairs: any[]
-    while (true) {
-        try {
-            messagePairs = await getMessagesAndProofsForL2Transaction(
-                l1RpcProviderUrl,
-                l2RpcProviderUrl,
-                l1StateCommitmentChainAddress,
-                l2CrossDomainMessengerAddress,
-                l2TransactionHash
-            )
-            break
-        } catch (err) {
-            if (err.message.includes("unable to find state root batch for tx")) {
-                console.log(`No state root batch for tx yet, trying again in ${BLOCKTIME_SECONDS}s...`)
-                await sleep(BLOCKTIME_SECONDS)
-            } else {
-                throw err
-            }
-        }
-    }
+    await relayL2Message(l2TransactionHash, l1Wallet)
 
-    console.log(`Found ${messagePairs.length} messages`)
-    for (let i = 0; i < messagePairs.length; i++) {
-        console.log(`Relaying message ${i + 1}/${messagePairs.length}`)
-        const { message, proof } = messagePairs[i]
-        while (true) {
-            try {
-                const result = await L1_CrossDomainMessenger.connect(l1Wallet).relayMessage(
-                    message.target,
-                    message.sender,
-                    message.message,
-                    message.messageNonce,
-                    proof
-                )
-                await result.wait()
-                console.log(
-                    `Relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${result.hash
-                    }`
-                )
-                break
-            } catch (err) {
-                // Kovan provider does not provide error message if tx reverts
-                // if (err.message.includes("execution failed due to an exception")) {
-                //     console.log(`Fraud proof may not be elapsed, trying again in 5s...`)
-                //     await sleep(5000)
-                // } else if (err.message.includes("message has already been received")) {
-                //     console.log(
-                //         `Message ${i + 1}/${messagePairs.length
-                //         } was relayed by someone else`
-                //     )
-                //     break
-                // } else {
-                //     throw err
-                // }
-                console.log(`Relay message ${i + 1}/${messagePairs.length} failed`)
-            }
-        }
-    }
     console.log("Successfully relay ERC20 withdrawal")
     console.log(`L1 ETH balance: ${ethers.utils.formatUnits(await l1Wallet.getBalance(), 18)}`)
     console.log(`L2 ETH balance: ${ethers.utils.formatUnits(await l2Wallet.getBalance(), 18)}`)
