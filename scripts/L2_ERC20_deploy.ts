@@ -1,26 +1,16 @@
-import { config, ethers } from "hardhat"
-import { loadContract } from "@eth-optimism/contracts"
+import { ethers } from "hardhat"
 import { factory } from "./utils"
+import { getL1Wallet, getL2StandardBridge, getL2Wallet, l1ERC20Address } from "./utils"
 
 const factory__L2_ERC20 = factory("L2StandardERC20Initializeable", true)
 
 async function main() {
-    const conf: any = config.networks.kovan
+    const l1Wallet = getL1Wallet()
+    const l2Wallet = getL2Wallet()
+    const L2_StandardBridge = getL2StandardBridge()
 
-    // Set up our RPC provider connections.
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
-
-    const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-    if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-    const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
-
-    // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
-
-    const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
-
-    const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
+    console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
+    console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
     const l2ETHBalanceBefore = await l2Wallet.getBalance()
     console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)

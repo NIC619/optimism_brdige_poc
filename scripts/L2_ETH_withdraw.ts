@@ -1,47 +1,16 @@
-import { config, ethers } from "hardhat"
-import { Watcher } from "@eth-optimism/watcher"
-import { loadContract } from "@eth-optimism/contracts"
-import { instance } from "./utils"
+import { ethers } from "hardhat"
+import { getL1Wallet, getL2ETH, getL2StandardBridge, getL2Wallet } from "./utils"
 
 async function main() {
-    const conf: any = config.networks.kovan
+    const l1Wallet = getL1Wallet()
+    const l2Wallet = getL2Wallet()
 
-    // Set up our RPC provider connections.
-    const l1RpcProvider = ethers.provider
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
-
-    const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-    if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-    const l1Wallet = new ethers.Wallet(deployerPrivateKey, ethers.provider)
-    const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
-
-    // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = conf.l1MessengerAddress // Kovan
-    // L2 messenger address is always the same.
-    const l2MessengerAddress = conf.l2MessengerAddress
-    // L2 standard bridge address is always the same.
-    const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
-
-    const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
-
-    // Tool that helps watches and waits for messages to be relayed between L1 and L2.
-    const watcher = new Watcher({
-        l1: {
-            provider: l1RpcProvider,
-            messengerAddress: l1MessengerAddress
-        },
-        l2: {
-            provider: l2RpcProvider,
-            messengerAddress: l2MessengerAddress
-        }
-    })
+    const L2_StandardBridge = getL2StandardBridge()
 
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
-    const l2ETHAddress = conf.l2ETHAddress
-    const L2_ETH = instance("ERC20", l2ETHAddress, l2RpcProvider, true)
+    const L2_ETH = getL2ETH()
 
 
     // Checking balance

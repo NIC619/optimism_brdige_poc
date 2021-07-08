@@ -1,40 +1,12 @@
-import { config, ethers } from "hardhat"
-import { Watcher } from "@eth-optimism/watcher"
-import { loadContract } from "@eth-optimism/contracts"
+import { ethers } from "hardhat"
+import { getL1StandardBridge, getL1Wallet, getL2Wallet, getWatcher } from "./utils"
 
 async function main() {
-    const conf: any = config.networks.kovan
+    const l1Wallet = getL1Wallet()
+    const l2Wallet = getL2Wallet()
+    const L1_StandardBridge = getL1StandardBridge()
 
-    // Set up our RPC provider connections.
-    const l1RpcProvider = ethers.provider
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
-
-    const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-    if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-    const l1Wallet = new ethers.Wallet(deployerPrivateKey, ethers.provider)
-    const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
-
-    // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = conf.l1MessengerAddress // Kovan
-    // L1 standard bridge address depends on the deployment.
-    const l1StandardBridgeAddress = "0x22F24361D548e5FaAfb36d1437839f080363982B" // Kovan
-    // L2 messenger address is always the same.
-    const l2MessengerAddress = "0x4200000000000000000000000000000000000007"
-
-    const L1_StandardBridge = loadContract("OVM_L1StandardBridge", l1StandardBridgeAddress, l1RpcProvider)
-
-    // Tool that helps watches and waits for messages to be relayed between L1 and L2.
-    const watcher = new Watcher({
-        l1: {
-            provider: l1RpcProvider,
-            messengerAddress: l1MessengerAddress
-        },
-        l2: {
-            provider: l2RpcProvider,
-            messengerAddress: l2MessengerAddress
-        }
-    })
+    const watcher = getWatcher()
 
     // Deploy the paired ERC20 token to L2.
     console.log("Depositing L1 ETH...")

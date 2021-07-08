@@ -1,50 +1,20 @@
-import { config, ethers } from "hardhat"
-import { Watcher } from "@eth-optimism/watcher"
-import { loadContract } from "@eth-optimism/contracts"
+import { ethers } from "hardhat"
 import { BigNumber } from "ethers"
-import { instance } from "./utils"
+import { getL1ERC20, getL1StandardBridge, getL1Wallet, getL2ERC20, getL2Wallet, getWatcher } from "./utils"
 
 async function main() {
-    const conf: any = config.networks.kovan
 
-    // Set up our RPC provider connections.
-    const l1RpcProvider = ethers.provider
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
+    const l1Wallet = getL1Wallet()
+    const l2Wallet = getL2Wallet()
+    const L1_StandardBridge = getL1StandardBridge()
 
-    const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-    if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-    const l1Wallet = new ethers.Wallet(deployerPrivateKey, ethers.provider)
-    const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
-
-    // L1 messenger address depends on the deployment.
-    const l1MessengerAddress = conf.l1MessengerAddress // Kovan
-    // L1 standard bridge address depends on the deployment.
-    const l1StandardBridgeAddress = conf.l1StandardBridgeAddress // Kovan
-    // L2 messenger address is always the same.
-    const l2MessengerAddress = conf.l2MessengerAddress
-
-    const L1_StandardBridge = loadContract("OVM_L1StandardBridge", l1StandardBridgeAddress, l1RpcProvider)
-
-    // Tool that helps watches and waits for messages to be relayed between L1 and L2.
-    const watcher = new Watcher({
-        l1: {
-            provider: l1RpcProvider,
-            messengerAddress: l1MessengerAddress
-        },
-        l2: {
-            provider: l2RpcProvider,
-            messengerAddress: l2MessengerAddress
-        }
-    })
+    const watcher = getWatcher()
 
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
 
-    const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
-    const L1_ERC20 = instance("ERC20", l1ERC20Address, l1RpcProvider)
-    const l2ERC20Address = "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
-    const L2_ERC20 = instance("ERC20", l2ERC20Address, l2RpcProvider, true)
+    const L1_ERC20 = getL1ERC20()
+    const L2_ERC20 = getL2ERC20()
 
 
     // Checking balance

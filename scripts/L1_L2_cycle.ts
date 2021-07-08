@@ -1,57 +1,20 @@
 import * as fs from "fs"
 import * as path from "path"
 import { config, ethers } from "hardhat"
-import { loadContract } from "@eth-optimism/contracts"
 import { sleep } from "@eth-optimism/core-utils"
 import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
-import { Watcher } from "@eth-optimism/watcher"
-import { instance, relayL2Message } from "./utils"
+import { CHALLENGE_PERIOD_BLOCKS, CHALLENGE_PERIOD_SECONDS, getL1Provider, getL2Provider, relayL2Message, l1StateCommitmentChainAddress, getWatcher, getL1Wallet, getL2Wallet, getL1ERC20, getL2ERC20, getL2StandardBridge, getL1StandardBridge } from "./utils"
 
-const conf: any = config.networks.kovan
+const l1Provider = getL1Provider()
+const l2Provider = getL2Provider()
+const l1Wallet = getL1Wallet()
+const l2Wallet = getL2Wallet()
+const watcher = getWatcher()
 
-const BLOCKTIME_SECONDS = conf.blocktime
-const CHALLENGE_PERIOD_BLOCKS = 60
-const CHALLENGE_PERIOD_SECONDS = CHALLENGE_PERIOD_BLOCKS * BLOCKTIME_SECONDS // 60 blocks for challenge period in Kovan
-const WATCHER_POLL_INTERVAL = 1500 // 1.5s
-
-// Set up our RPC provider connections.
-const l1RpcProviderUrl = (config.networks.kovan as any).url
-const l1RpcProvider = new ethers.providers.JsonRpcProvider(l1RpcProviderUrl)
-const l2RpcProviderUrl = conf.optimismURL
-const l2RpcProvider = new ethers.providers.JsonRpcProvider(l2RpcProviderUrl)
-
-const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-const l1Wallet = new ethers.Wallet(deployerPrivateKey, ethers.provider)
-const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
-
-const l1MessengerAddress = conf.l1MessengerAddress // Kovan
-const l1StandardBridgeAddress = conf.l1StandardBridgeAddress // Kovan
-const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
-const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
-const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
-
-const L1_StandardBridge = loadContract("OVM_L1StandardBridge", l1StandardBridgeAddress, l1RpcProvider)
-const L2_StandardBridge = loadContract("OVM_L2StandardBridge", l2StandardBridgeAddress, l2RpcProvider)
-
-// Tool that helps watches and waits for messages to be relayed between L1 and L2.
-const watcher = new Watcher({
-    l1: {
-        provider: l1RpcProvider,
-        messengerAddress: l1MessengerAddress
-    },
-    l2: {
-        provider: l2RpcProvider,
-        messengerAddress: l2CrossDomainMessengerAddress
-    },
-    pollInterval: WATCHER_POLL_INTERVAL
-})
-
-const l1ERC20Address = "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd" // Kovan LON
-const l2ERC20Address = "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
-const L1_ERC20 = instance("ERC20", l1ERC20Address, l1RpcProvider)
-const L2_ERC20 = instance("L2StandardERC20Initializeable", l2ERC20Address, l2RpcProvider, true)
+const L1_StandardBridge = getL1StandardBridge()
+const L2_StandardBridge = getL2StandardBridge()
+const L1_ERC20 = getL1ERC20()
+const L2_ERC20 = getL2ERC20()
 
 async function checkPendingWithdrawals() {
     const pendingWithdrawalsFilePath = path.join(
@@ -65,14 +28,14 @@ async function checkPendingWithdrawals() {
         // TODO: how to verify if it is indded a withdraw tx?
 
         // Verify if L2 withdraw tx succeeded
-        const l2Transaction = await l2RpcProvider.getTransaction(L2_tx_hash)
+        const l2Transaction = await l2Provider.getTransaction(L2_tx_hash)
         if (l2Transaction === null) {
             console.log(`Can not find L2 tx: ${L2_tx_hash}`)
             console.log("Dropping it from pendingWithdrawals file...")
             delete pendingWithdrawals[L2_tx_hash]
             continue
         }
-        const L2_tx_receipt = await l2RpcProvider.getTransactionReceipt(L2_tx_hash)
+        const L2_tx_receipt = await l2Provider.getTransactionReceipt(L2_tx_hash)
         if (L2_tx_receipt == null) {
             console.log(`Can not find tx receipt for L2 tx: ${L2_tx_hash}`)
             continue
@@ -88,7 +51,7 @@ async function checkPendingWithdrawals() {
         const NUM_L2_GENESIS_BLOCKS = 1
         const stateBatchAppendedEvent = await getStateBatchAppendedEventByTransactionIndex(
             // @ts-ignore
-            l1RpcProvider,
+            l1Provider,
             l1StateCommitmentChainAddress,
             // @ts-ignore
             l2Transaction.blockNumber - NUM_L2_GENESIS_BLOCKS
@@ -100,9 +63,9 @@ async function checkPendingWithdrawals() {
 
         const stateBatchTransaction = await stateBatchAppendedEvent.getTransaction()
         const L1_sate_root_submission_tx_hash = stateBatchTransaction.hash
-        const L1_sate_root_submission_tx_receipt = await l1RpcProvider.getTransactionReceipt(L1_sate_root_submission_tx_hash)
+        const L1_sate_root_submission_tx_receipt = await l1Provider.getTransactionReceipt(L1_sate_root_submission_tx_hash)
         const inclusionBlockNumber = L1_sate_root_submission_tx_receipt.blockNumber
-        const latestBlockNumber = await l1RpcProvider.getBlockNumber()
+        const latestBlockNumber = await l1Provider.getBlockNumber()
         // TODO: this check might be redundant
         if (latestBlockNumber < inclusionBlockNumber) throw Error(
             "Something went wrong. Latest block number is smaller than L2 tx inclusion block number"
@@ -126,7 +89,7 @@ async function checkPendingWithdrawals() {
             const L1_tx_receipt = await watcher.getL1TransactionReceipt(L2_tx_msg_hash, false)
             if (L1_tx_receipt == undefined) {
                 console.log(`L2 withdraw tx: ${L2_tx_hash} is ready to be relayed`)
-                await relayL2Message(L2_tx_hash, l1Wallet)
+                await relayL2Message(L2_tx_hash)
                 console.log(`Successfully relayed L2 withdraw tx: ${L2_tx_hash}`)
                 console.log("Dropping it from pendingWithdrawals file...")
                 delete pendingWithdrawals[L2_tx_hash]
@@ -229,7 +192,7 @@ async function cycle() {
     console.log("-------------------------------------------")
     const l2TransactionHash = withdraw_L2_ERC20_tx.hash
 
-    await relayL2Message(l2TransactionHash, l1Wallet)
+    await relayL2Message(l2TransactionHash)
 
     console.log("Successfully relay ERC20 withdrawal")
     console.log(`L1 ETH balance: ${ethers.utils.formatUnits(await l1Wallet.getBalance(), 18)}`)

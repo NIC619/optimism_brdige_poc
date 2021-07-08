@@ -1,22 +1,14 @@
-import { config, ethers } from "hardhat"
-import { instance } from "./utils"
+import { ethers } from "hardhat"
+import { getL2ERC20, getL2Wallet } from "./utils"
 
 async function main() {
-    const conf: any = config.networks.kovan
+    const l2Wallet = getL2Wallet()
 
-    // Set up our RPC provider connections.
-    const l2RpcProvider = new ethers.providers.JsonRpcProvider(conf.optimismURL)
-
-    const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY
-    if (deployerPrivateKey === undefined) throw Error("Deployer private key not provided")
-
-    const l2Wallet = new ethers.Wallet(deployerPrivateKey, l2RpcProvider)
+    const L2_ERC20 = getL2ERC20()
 
     const l2ETHBalanceBefore = await l2Wallet.getBalance()
     console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)
 
-    const l2ERC20Address = "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
-    const L2_ERC20 = instance("ERC20", l2ERC20Address, l2RpcProvider, true)
     const l2ERC20BalanceBefore = await L2_ERC20.callStatic.balanceOf(l2Wallet.address)
     console.log(`L2 ERC20 balance before: ${l2ERC20BalanceBefore.toString()}`)
 

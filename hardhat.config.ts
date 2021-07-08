@@ -36,6 +36,8 @@ module.exports = {
       l1StandardBridgeAddress: "0x22F24361D548e5FaAfb36d1437839f080363982B",
       l2StandardBridgeAddress: "0x4200000000000000000000000000000000000010",
       l1StateCommitmentChainAddress: "0xa2487713665AC596b0b3E4881417f276834473d2",
+      l1ERC20Address: "0x0712629Ced85A3A62E5BCa96303b8fdd06CBF8dd", // Kovan LON
+      l2ERC20Address: "0x235d9B4249E9C9D705fAC6E98F7D21E58091220A"
     },
     // Add this network to your config!
     optimism: {
