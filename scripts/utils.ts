@@ -11,11 +11,11 @@ export const CHALLENGE_PERIOD_BLOCKS = 60
 export const CHALLENGE_PERIOD_SECONDS = CHALLENGE_PERIOD_BLOCKS * BLOCKTIME_SECONDS // 60 blocks for challenge period in Kovan
 const WATCHER_POLL_INTERVAL = 1500 // 1.5s
 
-const l1RpcProviderUrl = (config.networks.kovan as any).url
-const l2RpcProviderUrl = conf.optimismURL
+export const l1RpcProviderUrl = (config.networks.kovan as any).url
+export const l2RpcProviderUrl = conf.optimismURL
 
 const l1CrossDomainMessengerAddress = conf.l1MessengerAddress
-const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
+export const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
 const l1StandardBridgeAddress = conf.l1StandardBridgeAddress
 const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 export const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
