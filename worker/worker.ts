@@ -21,49 +21,15 @@ export default async function worker(): Promise<void> {
     const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
     for (const [txHash, info] of Object.entries(pendingTransactions)) {
         if (info["layer"] == "L1") {
-            // Check if tx succeeded
-            if (info["status"] == "Sent") {
-                const l1Transaction = await l1Provider.getTransaction(txHash)
-                if (l1Transaction === null) {
-                    logger.info(`Can not find L1 tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
-                    continue
-                }
-                const L1_tx_receipt = await l1Provider.getTransactionReceipt(txHash)
-                if (L1_tx_receipt == null) {
-                    logger.info(`Can not find tx receipt for L1 tx: ${txHash}`)
-                    continue
-                }
-                if (L1_tx_receipt.status == 0) {
-                    logger.info(`tx reverted for L1 tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
-                    continue
-                }
-                info["status"] = "Waiting"
-            }
-
-            if (info["status"] == "Waiting") {
-                // Check if tx is confirmed on L2
-                // Or if tx should be replayed
-                const [msgHash] = await watcher.getMessageHashesFromL1Tx(txHash)
-                if (msgHash === undefined) {
-                    logger.info(`Not a cross domain tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
-                } else {
-                    const l2_receipt = await watcher.getL2TransactionReceipt(msgHash, false)
-                    if (l2_receipt !== undefined) {
-                        info["status"] = "Relayed"
-                        info["relayTxHash"] = l2_receipt.transactionHash
-                    }
-                }
-
-                // Initiate withdraw
-                await withdraw(pendingTransactions)
-            } else if (info["status"] == "Relayed") {
+            if (info["status"] == "Sent" || info["status"] == "Waiting") {
                 continue
+            } else if (info["status"] == "Relayed") {
+                if (info["next action"] == "Withdraw") {
+                    // Initiate withdraw
+                    await withdraw(pendingTransactions)
+                    info["next action"] = "None"
+                    continue
+                }
             } else {
                 logger.info(`Unknown status for ${txHash}: ${info["status"]}`)
                 logger.info("Dropping it from pendingTransactions file...")
@@ -73,80 +39,32 @@ export default async function worker(): Promise<void> {
         } else if (info["layer"] == "L2") {
             // Check and update withdraw tx status
             let l2Transaction
-            if (info["status"] == "Sent") {
-                // Check if L2 withdraw tx succeeded
-                l2Transaction = await l2Provider.getTransaction(txHash)
-                if (l2Transaction === null) {
-                    logger.info(`Can not find L2 tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
-                    continue
-                }
-                const L2_tx_receipt = await l2Provider.getTransactionReceipt(txHash)
-                if (L2_tx_receipt == null) {
-                    logger.info(`Can not find tx receipt for L2 tx: ${txHash}`)
-                    continue
-                }
-                if (L2_tx_receipt.status == 0) {
-                    logger.info(`tx reverted for L2 tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
-                    continue
-                }
-                info["status"] = "Waiting"
-            }
-
-            if (info["status"] == "Waiting") {
-                if (info["stateBatchTxInclusionBlockNumber"] === undefined) {
-                    if (l2Transaction === undefined) l2Transaction = await l2Provider.getTransaction(txHash)
-                    const stateBatchAppendedEvent = await getStateBatchAppendedEventByTransactionIndex(
-                        // @ts-ignore
-                        l1Provider,
-                        l1StateCommitmentChainAddress,
-                        // @ts-ignore
-                        l2Transaction.blockNumber - NUM_L2_GENESIS_BLOCKS
-                    )
-                    if (stateBatchAppendedEvent === null) {
-                        logger.info(`L2 tx: ${txHash} is not batched into L1 yet`)
-                        continue
-                    }
-                    const stateBatchTransaction = await stateBatchAppendedEvent.getTransaction()
-                    info["stateBatchTx"] = stateBatchTransaction.hash
-                    const L1_sate_root_submission_tx_hash = info["stateBatchTx"]
-                    const L1_sate_root_submission_tx_receipt = await l1Provider.getTransactionReceipt(L1_sate_root_submission_tx_hash)
-                    const inclusionBlockNumber = L1_sate_root_submission_tx_receipt.blockNumber
-                    info["stateBatchTxInclusionBlockNumber"] = inclusionBlockNumber
-                }
-                const inclusionBlockNumber = info["stateBatchTxInclusionBlockNumber"]
-                const latestBlockNumber = await l1Provider.getBlockNumber()
-                if (latestBlockNumber - inclusionBlockNumber < CHALLENGE_PERIOD_BLOCKS) {
-                    logger.info(`L2 withdraw tx: ${txHash} is still in challenge period`)
-                    continue
-                }
-
-                // Check if it's already relayed or it's not a cross domain tx at all
-                const [msgHash] = await watcher.getMessageHashesFromL2Tx(txHash)
-                if (msgHash === undefined) {
-                    logger.info(`Not a cross domain tx: ${txHash}`)
-                    logger.info("Dropping it from pendingTransactions file...")
-                    delete pendingTransactions[txHash]
+            if (info["status"] == "Sent" || info["status"] == "Waiting" || info["status"] == "Relayed") {
+                continue
+            } else if (info["status"] == "Ready") {            
+                // Watcher will throw error if same messages are relayed multiple times on L1
+                // But it should not be the case for a withdraw tx
+                // TODO: verify if failed relayed is included in this case
+                const msgHash = info["msgHash"]
+                const L1_tx_receipt = await watcher.getL1TransactionReceipt(msgHash, false)
+                if (L1_tx_receipt === undefined) {
+                    const [relayTxHash] = await relayL2Message(txHash)
+                    logger.info(`Successfully relayed L2 withdraw tx: ${txHash}`)
+                    info["relayTxHash"] = relayTxHash
                 } else {
-                    // Watcher will throw error if same messages are relayed multiple times on L1
-                    // But it should not be the case for a withdraw tx
-                    // TODO: verify if failed relayed is included in this case
-                    const L1_tx_receipt = await watcher.getL1TransactionReceipt(msgHash, false)
-                    if (L1_tx_receipt === undefined) {
-                        const [relayTxHash] = await relayL2Message(txHash)
-                        logger.info(`Successfully relayed L2 withdraw tx: ${txHash}`)
-                        info["relayTxHash"] = relayTxHash
-                    } else {
-                        // TODO: related to previous TODO, should we check if the L1 withdraw tx succeed?
-                        logger.info(`L2 withdraw tx: ${txHash} is already relayed by L1 tx: ${L1_tx_receipt.transactionHash}`)
-                        info["relayTxHash"] = L1_tx_receipt.transactionHash
-                    }
-                    info["status"] = "Relayed" 
+                    // TODO: related to previous TODO, should we check if the L1 withdraw tx succeed?
+                    logger.info(`L2 withdraw tx: ${txHash} is already relayed by L1 tx: ${L1_tx_receipt.transactionHash}`)
+                    info["relayTxHash"] = L1_tx_receipt.transactionHash
                 }
-            } else if (info["status"] == "Relayed") {
+                info["status"] = "Relayed"
+                // TODO: below condition check is redundant but we keep if for now
+                // to make L1 & L2 relay procedures the same
+                info["next action"] = "Deposit"
+                if (info["next action"] == "Deposit") {
+                    // Inititate deposit
+                    await deposit(pendingTransactions)
+                    info["next action"] = "None"
+                }
                 continue
             } else {
                 logger.info(`Unknown status for ${txHash}: ${info["status"]}`)
@@ -154,8 +72,6 @@ export default async function worker(): Promise<void> {
                 delete pendingTransactions[txHash]
                 continue
             }
-            // Inititate deposit
-            await deposit(pendingTransactions)
         } else {
             logger.info(`Did not record if tx ${txHash} is a L1 or L2 tx`)
             logger.info("Dropping it from pendingTransactions file...")
