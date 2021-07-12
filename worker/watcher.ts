@@ -1,9 +1,15 @@
+import * as fs from "fs"
 import * as path from "path"
 import { config } from "hardhat"
 import { BigNumber, Contract } from "ethers"
+import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
+import { getL1CrossDomainMessenger, getL1Provider, getL1StandardBridge, getL1Wallet, getL2CrossDomainMessenger, getL2Provider, getL2StandardBridge, getL2Wallet, getWatcher, l1ERC20Address, l1StateCommitmentChainAddress, l2ERC20Address } from "../scripts/utils"
 import logger from "./logger"
-import { getL1CrossDomainMessenger, getL1StandardBridge, getL1Wallet, getL2CrossDomainMessenger, getL2StandardBridge, getL2Wallet, l1ERC20Address, l2ERC20Address } from "../scripts/utils"
+import { CHALLENGE_PERIOD_BLOCKS } from "./config"
 
+const l1Provider = getL1Provider()
+const l2Provider = getL2Provider()
+const opWatcher = getWatcher()
 const l1Wallet = getL1Wallet()
 const l2Wallet = getL2Wallet()
 
@@ -55,9 +61,32 @@ async function l1DepositMessageHandler(
     }
     logger.info("deposit match")
 
-    // const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
-    // for (const [txHash, info] of Object.entries(pendingTransactions)) {
-    // }
+    const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
+    for (const [txHash, info] of Object.entries(pendingTransactions)) {
+        if (info["layer"] == "L1" && info["status"] == "Sent") {
+            const l1Transaction = await l1Provider.getTransaction(txHash)
+            if (l1Transaction === null) {
+                logger.info(`Can not find L1 tx: ${txHash}`)
+                logger.info("Dropping it from pendingTransactions file...")
+                delete pendingTransactions[txHash]
+                continue
+            }
+            const L1_tx_receipt = await l1Provider.getTransactionReceipt(txHash)
+            if (L1_tx_receipt == null) {
+                logger.info(`Can not find tx receipt for L1 tx: ${txHash}`)
+                continue
+            }
+            if (L1_tx_receipt.status == 0) {
+                logger.info(`tx reverted for L1 tx: ${txHash}`)
+                logger.info("Dropping it from pendingTransactions file...")
+                delete pendingTransactions[txHash]
+                continue
+            }
+            info["status"] = "Waiting"
+            break
+        }
+    }
+    fs.writeFileSync(pendingTransactionsFilePath, JSON.stringify(pendingTransactions, null, 2))
 }
 
 async function l2DepositFinalizedHandler(
@@ -83,6 +112,29 @@ async function l2DepositFinalizedHandler(
         return
     }
     logger.info("deposit match")
+
+    const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
+    for (const [txHash, info] of Object.entries(pendingTransactions)) {
+        if (info["layer"] == "L1" && info["status"] == "Waiting") {
+            // Check if tx is confirmed on L2
+            // Or if tx should be replayed
+            const [msgHash] = await opWatcher.getMessageHashesFromL1Tx(txHash)
+            if (msgHash === undefined) {
+                logger.info(`Not a cross domain tx: ${txHash}`)
+                logger.info("Dropping it from pendingTransactions file...")
+                delete pendingTransactions[txHash]
+            } else {
+                const l2_receipt = await opWatcher.getL2TransactionReceipt(msgHash, false)
+                if (l2_receipt !== undefined) {
+                    info["status"] = "Relayed"
+                    info["relayTxHash"] = l2_receipt.transactionHash
+                    info["next action"] = "Withdraw"
+                    break
+                }
+            }
+        }
+    }
+    fs.writeFileSync(pendingTransactionsFilePath, JSON.stringify(pendingTransactions, null, 2))
 }
 
 async function l2WithdrawMessageHandler(
@@ -108,6 +160,34 @@ async function l2WithdrawMessageHandler(
         return
     }
     logger.info("withdraw match")
+
+    const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
+    for (const [txHash, info] of Object.entries(pendingTransactions)) {
+        if (info["layer"] == "L2" && info["status"] == "Sent") {
+            // Check if L2 withdraw tx succeeded
+            const l2Transaction = await l2Provider.getTransaction(txHash)
+            if (l2Transaction === null) {
+                logger.info(`Can not find L2 tx: ${txHash}`)
+                logger.info("Dropping it from pendingTransactions file...")
+                delete pendingTransactions[txHash]
+                continue
+            }
+            const L2_tx_receipt = await l2Provider.getTransactionReceipt(txHash)
+            if (L2_tx_receipt == null) {
+                logger.info(`Can not find tx receipt for L2 tx: ${txHash}`)
+                continue
+            }
+            if (L2_tx_receipt.status == 0) {
+                logger.info(`tx reverted for L2 tx: ${txHash}`)
+                logger.info("Dropping it from pendingTransactions file...")
+                delete pendingTransactions[txHash]
+                continue
+            }
+            info["status"] = "Waiting"
+            break
+        }
+    }
+    fs.writeFileSync(pendingTransactionsFilePath, JSON.stringify(pendingTransactions, null, 2))
 }
 
 async function l2WithdrawFinalizedHandler(
@@ -133,4 +213,14 @@ async function l2WithdrawFinalizedHandler(
         return
     }
     logger.info("withdraw match")
+
+    const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
+    for (const [txHash, info] of Object.entries(pendingTransactions)) {
+        if (info["layer"] == "L2" && info["status"] == "Relayed" && info["next action"] == "Wait for confirmation") {
+            info["next action"] = "Deposit"
+            break
+        }
+    }
+    fs.writeFileSync(pendingTransactionsFilePath, JSON.stringify(pendingTransactions, null, 2))
+
 }
