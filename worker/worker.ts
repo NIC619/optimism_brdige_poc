@@ -20,9 +20,6 @@ export default async function worker(): Promise<void> {
 
     const pendingTransactions: [string: {}] = require(pendingTransactionsFilePath)
     for (const [txHash, info] of Object.entries(pendingTransactions)) {
-        logger.info(txHash)
-        logger.info(info)
-
         if (info["layer"] == "L1") {
             // Check if tx succeeded
             if (info["status"] == "Sent") {

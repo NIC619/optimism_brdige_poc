@@ -1,4 +1,5 @@
-import { config, ethers } from "hardhat"
+import { ethers } from "ethers"
+import { config } from "hardhat"
 import { loadContract } from "@eth-optimism/contracts"
 import { sleep } from "@eth-optimism/core-utils"
 import { getMessagesAndProofsForL2Transaction } from "@eth-optimism/message-relayer"
@@ -21,7 +22,7 @@ const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
 export const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
 
 export const l1ERC20Address = conf.l1ERC20Address
-const l2ERC20Address = conf.l2ERC20Address
+export const l2ERC20Address = conf.l2ERC20Address
 const l2ETHAddress = conf.l2ETHAddress
 
 // Contract factor and instance helper
