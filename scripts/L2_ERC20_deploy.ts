@@ -1,6 +1,5 @@
 import { ethers } from "hardhat"
-import { factory } from "./utils"
-import { getL1Wallet, getL2StandardBridge, getL2Wallet, l1ERC20Address } from "./utils"
+import { factory, getL1Wallet, getL2StandardBridge, getL2Wallet, l1ERC20Address } from "./utils"
 
 const factory__L2_ERC20 = factory("L2StandardERC20Initializeable", true)
 
@@ -11,9 +10,6 @@ async function main() {
 
     console.log(`L1 ETH balance: ${(await l1Wallet.getBalance()).toString()}`)
     console.log(`L2 ETH balance: ${(await l2Wallet.getBalance()).toString()}`)
-
-    const l2ETHBalanceBefore = await l2Wallet.getBalance()
-    console.log(`L2 ETH balance before: ${l2ETHBalanceBefore.toString()}`)
 
     // Deploy the paired ERC20 token to L2.
     console.log("Deploying L2 ERC20...")

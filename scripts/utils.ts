@@ -8,14 +8,15 @@ import { Watcher } from "@eth-optimism/watcher"
 // Configs
 const conf: any = config.networks.kovan
 const BLOCKTIME_SECONDS = conf.blocktime
-export const CHALLENGE_PERIOD_BLOCKS = 60
-export const CHALLENGE_PERIOD_SECONDS = CHALLENGE_PERIOD_BLOCKS * BLOCKTIME_SECONDS // 60 blocks for challenge period in Kovan
+export const CHALLENGE_PERIOD_SECONDS = 60 // 60 seconds for challenge period in Kovan
 const WATCHER_POLL_INTERVAL = 1500 // 1.5s
 
 export const l1RpcProviderUrl = (config.networks.kovan as any).url
 export const l2RpcProviderUrl = conf.optimismURL
 
-const l1CrossDomainMessengerAddress = conf.l1MessengerAddress
+export const optimismChainId = conf.optimismChainId
+const CanonicalTransactionChainAddress = conf.CTCAddress
+export const l1CrossDomainMessengerAddress = conf.l1MessengerAddress
 export const l2CrossDomainMessengerAddress = conf.l2MessengerAddress
 const l1StandardBridgeAddress = conf.l1StandardBridgeAddress
 const l2StandardBridgeAddress = conf.l2StandardBridgeAddress
@@ -23,7 +24,7 @@ export const l1StateCommitmentChainAddress = conf.l1StateCommitmentChainAddress
 
 export const l1ERC20Address = conf.l1ERC20Address
 export const l2ERC20Address = conf.l2ERC20Address
-const l2ETHAddress = conf.l2ETHAddress
+export const l2ETHAddress = conf.l2ETHAddress
 
 // Contract factor and instance helper
 export const factory = (name, ovm = false) => {
@@ -61,6 +62,16 @@ export const getL2Wallet = () => {
     const deployerPrivateKey = getEnvPrivateKey()
     const L2Provider = getL2Provider()
     return new ethers.Wallet(deployerPrivateKey, L2Provider)
+}
+
+export const getECDSAContractAccount = () => {
+    const L2Provider = getL2Provider()
+    return loadContract("OVM_ECDSAContractAccount", CanonicalTransactionChainAddress, L2Provider)
+}
+
+export const getCanonicalTransactionChain = () => {
+    const L1Provider = getL1Provider()
+    return loadContract("OVM_CanonicalTransactionChain", CanonicalTransactionChainAddress, L1Provider)
 }
 
 export const getL1CrossDomainMessenger = () => {
@@ -179,4 +190,16 @@ export const relayL2Message = async (l2TransactionHash) => {
             }
         }
     }
+}
+
+export const encodeXDomainCalldata = (
+    target: string,
+    sender: string,
+    message: string,
+    messageNonce: number
+    ): string => {
+    return getL2CrossDomainMessenger().interface.encodeFunctionData(
+        "relayMessage",
+        [target, sender, message, messageNonce]
+    )
 }

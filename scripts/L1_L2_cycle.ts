@@ -3,7 +3,7 @@ import * as path from "path"
 import { config, ethers } from "hardhat"
 import { sleep } from "@eth-optimism/core-utils"
 import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
-import { CHALLENGE_PERIOD_BLOCKS, CHALLENGE_PERIOD_SECONDS, getL1Provider, getL2Provider, relayL2Message, l1StateCommitmentChainAddress, getWatcher, getL1Wallet, getL2Wallet, getL1ERC20, getL2ERC20, getL2StandardBridge, getL1StandardBridge } from "./utils"
+import { CHALLENGE_PERIOD_SECONDS, getL1Provider, getL2Provider, relayL2Message, l1StateCommitmentChainAddress, getWatcher, getL1Wallet, getL2Wallet, getL1ERC20, getL2ERC20, getL2StandardBridge, getL1StandardBridge } from "./utils"
 
 const l1Provider = getL1Provider()
 const l2Provider = getL2Provider()
@@ -65,12 +65,14 @@ async function checkPendingWithdrawals() {
         const L1_sate_root_submission_tx_hash = stateBatchTransaction.hash
         const L1_sate_root_submission_tx_receipt = await l1Provider.getTransactionReceipt(L1_sate_root_submission_tx_hash)
         const inclusionBlockNumber = L1_sate_root_submission_tx_receipt.blockNumber
+        const inclusionBlockTimestamp = (await l1Provider.getBlock(inclusionBlockNumber)).timestamp
         const latestBlockNumber = await l1Provider.getBlockNumber()
+        const latestBlockTimestamp = (await l1Provider.getBlock(latestBlockNumber)).timestamp
         // TODO: this check might be redundant
-        if (latestBlockNumber < inclusionBlockNumber) throw Error(
+        if (latestBlockTimestamp < inclusionBlockTimestamp) throw Error(
             "Something went wrong. Latest block number is smaller than L2 tx inclusion block number"
         )
-        if (latestBlockNumber - inclusionBlockNumber < CHALLENGE_PERIOD_BLOCKS) {
+        if (latestBlockTimestamp - inclusionBlockTimestamp < CHALLENGE_PERIOD_SECONDS) {
             console.log(`L2 withdraw tx: ${L2_tx_hash} is still in challenge period`)
             pendingWithdrawals[L2_tx_hash]["status"] = "Still in challenge period"
             continue
@@ -164,7 +166,7 @@ async function cycle() {
             gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         }
     )
-    console.log(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
+    console.log(`approve_l2_erc20_tx L2 tx hash: ${approve_l2_erc20_tx.hash}`)
     await approve_l2_erc20_tx.wait()
 
     console.log("Withdrawing...")
