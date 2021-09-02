@@ -1,11 +1,10 @@
 import * as fs from "fs"
 import * as path from "path"
 import { config } from "hardhat"
-import { sleep } from "@eth-optimism/core-utils"
-import { getStateBatchAppendedEventByTransactionIndex, getMessagesAndProofsForL2Transaction } from "@eth-optimism/message-relayer"
-import { getL1CrossDomainMessenger, getL1ERC20, getL1Provider, getL1StandardBridge, getL1Wallet, getL2ERC20, getL2Provider, getL2StandardBridge, getL2Wallet, getWatcher, l1RpcProviderUrl, l1StateCommitmentChainAddress, l2CrossDomainMessengerAddress, l2RpcProviderUrl, } from "../scripts/utils"
+import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
+import { getL1Provider, getL2Provider, getWatcher, l1StateCommitmentChainAddress } from "../scripts/utils"
 import logger from "./logger"
-import { BLOCKTIME_SECONDS, CHALLENGE_PERIOD_BLOCKS, NUM_L2_GENESIS_BLOCKS, depositAmount, withdrawAmount } from "./config"
+import { BLOCKTIME_SECONDS, CHALLENGE_PERIOD_SECONDS, NUM_L2_GENESIS_BLOCKS } from "./config"
 
 export default async function scanner(): Promise<void> {
     const l1Provider = getL1Provider()
@@ -97,7 +96,7 @@ export default async function scanner(): Promise<void> {
             }
 
             if (info["status"] == "Waiting") {
-                if (info["stateBatchTxInclusionBlockNumber"] === undefined) {
+                if (info["stateBatchTxInclusionBlockTimestamp"] === undefined) {
                     if (l2Transaction === undefined) l2Transaction = await l2Provider.getTransaction(txHash)
                     const stateBatchAppendedEvent = await getStateBatchAppendedEventByTransactionIndex(
                         // @ts-ignore
@@ -115,11 +114,16 @@ export default async function scanner(): Promise<void> {
                     const L1_sate_root_submission_tx_hash = info["stateBatchTx"]
                     const L1_sate_root_submission_tx_receipt = await l1Provider.getTransactionReceipt(L1_sate_root_submission_tx_hash)
                     const inclusionBlockNumber = L1_sate_root_submission_tx_receipt.blockNumber
-                    info["stateBatchTxInclusionBlockNumber"] = inclusionBlockNumber
+                    const inclusionBlockTimestamp = (await l1Provider.getBlock(inclusionBlockNumber)).timestamp
+                    info["stateBatchTxInclusionBlockTimestamp"] = inclusionBlockTimestamp
                 }
-                const inclusionBlockNumber = info["stateBatchTxInclusionBlockNumber"]
+                const inclusionBlockTimestamp = info["stateBatchTxInclusionBlockTimestamp"]
                 const latestBlockNumber = await l1Provider.getBlockNumber()
-                if (latestBlockNumber - inclusionBlockNumber < CHALLENGE_PERIOD_BLOCKS) {
+                const latestBlockTimestamp = (await l1Provider.getBlock(latestBlockNumber)).timestamp
+                // Add a buffer period before relaying L2 message.
+                // This is mostly just precaution.
+                const bufferPeriod = BLOCKTIME_SECONDS
+                if (latestBlockTimestamp - inclusionBlockTimestamp < CHALLENGE_PERIOD_SECONDS + bufferPeriod) {
                     logger.info(`L2 withdraw tx: ${txHash} is still in challenge period`)
                     continue
                 }

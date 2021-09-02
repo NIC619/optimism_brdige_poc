@@ -5,7 +5,6 @@ import { BigNumber, Contract } from "ethers"
 import { getStateBatchAppendedEventByTransactionIndex } from "@eth-optimism/message-relayer"
 import { getL1CrossDomainMessenger, getL1Provider, getL1StandardBridge, getL1Wallet, getL2CrossDomainMessenger, getL2Provider, getL2StandardBridge, getL2Wallet, getWatcher, l1ERC20Address, l1StateCommitmentChainAddress, l2ERC20Address } from "../scripts/utils"
 import logger from "./logger"
-import { CHALLENGE_PERIOD_BLOCKS } from "./config"
 
 const l1Provider = getL1Provider()
 const l2Provider = getL2Provider()

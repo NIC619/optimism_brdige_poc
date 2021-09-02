@@ -2,14 +2,12 @@ import * as fs from "fs"
 import * as path from "path"
 import { config } from "hardhat"
 import { sleep } from "@eth-optimism/core-utils"
-import { getStateBatchAppendedEventByTransactionIndex, getMessagesAndProofsForL2Transaction } from "@eth-optimism/message-relayer"
-import { getL1CrossDomainMessenger, getL1ERC20, getL1Provider, getL1StandardBridge, getL1Wallet, getL2ERC20, getL2Provider, getL2StandardBridge, getL2Wallet, getWatcher, l1RpcProviderUrl, l1StateCommitmentChainAddress, l2CrossDomainMessengerAddress, l2RpcProviderUrl, } from "../scripts/utils"
+import { getMessagesAndProofsForL2Transaction } from "@eth-optimism/message-relayer"
+import { getL1CrossDomainMessenger, getL1ERC20, getL1StandardBridge, getL1Wallet, getL2ERC20, getL2StandardBridge, getL2Wallet, getWatcher, l1RpcProviderUrl, l1StateCommitmentChainAddress, l2CrossDomainMessengerAddress, l2RpcProviderUrl, } from "../scripts/utils"
 import logger from "./logger"
-import { BLOCKTIME_SECONDS, CHALLENGE_PERIOD_BLOCKS, NUM_L2_GENESIS_BLOCKS, depositAmount, withdrawAmount } from "./config"
+import { BLOCKTIME_SECONDS, depositAmount, withdrawAmount } from "./config"
 
 export default async function worker(): Promise<void> {
-    const l1Provider = getL1Provider()
-    const l2Provider = getL2Provider()
     const watcher = getWatcher()
 
     logger.info("Worker started")
@@ -96,7 +94,7 @@ async function withdraw(pendingTransactions) {
         //     gasPrice: ethers.utils.parseUnits("0.015", "gwei")
         // }
     )
-    logger.info(`approve_l2_erc20_tx L1 tx hash: ${approve_l2_erc20_tx.hash}`)
+    logger.info(`approve_l2_erc20_tx L2 tx hash: ${approve_l2_erc20_tx.hash}`)
     await approve_l2_erc20_tx.wait()
 
     const receiverAddress = l2Wallet.address
@@ -176,38 +174,35 @@ export const relayL2Message = async (l2TransactionHash) => {
     for (let i = 0; i < messagePairs.length; i++) {
         logger.info(`Relaying message ${i + 1}/${messagePairs.length}`)
         const { message, proof } = messagePairs[i]
-        while (true) {
-            try {
-                const relay_L2_tx = await L1_CrossDomainMessenger.connect(l1Wallet).relayMessage(
-                    message.target,
-                    message.sender,
-                    message.message,
-                    message.messageNonce,
-                    proof
-                )
-                await relay_L2_tx.wait()
-                logger.info(
-                    `Relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${relay_L2_tx.hash
-                    }`
-                )
-                relayTransactionHashes.push(relay_L2_tx.hash)
-                break
-            } catch (err) {
-                // Kovan provider does not provide error message if tx reverts
-                // if (err.message.includes("execution failed due to an exception")) {
-                //     logger.info(`Fraud proof may not be elapsed, trying again in 5s...`)
-                //     await sleep(5000)
-                // } else if (err.message.includes("message has already been received")) {
-                //     logger.info(
-                //         `Message ${i + 1}/${messagePairs.length
-                //         } was relayed by someone else`
-                //     )
-                //     break
-                // } else {
-                //     throw err
-                // }
-                logger.info(`Relay message ${i + 1}/${messagePairs.length} failed`)
-            }
+        try {
+            const relay_L2_tx = await L1_CrossDomainMessenger.connect(l1Wallet).relayMessage(
+                message.target,
+                message.sender,
+                message.message,
+                message.messageNonce,
+                proof
+            )
+            await relay_L2_tx.wait()
+            logger.info(
+                `Relayed message ${i + 1}/${messagePairs.length}! L1 tx hash: ${relay_L2_tx.hash
+                }`
+            )
+            relayTransactionHashes.push(relay_L2_tx.hash)
+        } catch (err) {
+            // Kovan provider does not provide error message if tx reverts
+            // if (err.message.includes("execution failed due to an exception")) {
+            //     logger.info(`Fraud proof may not be elapsed, trying again in 5s...`)
+            //     await sleep(5000)
+            // } else if (err.message.includes("message has already been received")) {
+            //     logger.info(
+            //         `Message ${i + 1}/${messagePairs.length
+            //         } was relayed by someone else`
+            //     )
+            //     break
+            // } else {
+            //     throw err
+            // }
+            logger.info(`Relay message ${i + 1}/${messagePairs.length} failed`)
         }
     }
     return relayTransactionHashes
