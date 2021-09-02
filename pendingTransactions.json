@@ -1,0 +1,75 @@
+{
+  "0xae91713f057812432265df8a8f9cb1678545579230e809aaf454927e1e17af12": {
+    "layer": "L2",
+    "status": "Relayed",
+    "stateBatchTx": "0xf52b98332733aa725ce96df48909e7daac6a51ce5f13431c5952049f34aaf987",
+    "stateBatchTxInclusionBlockNumber": 25984276,
+    "relayTxHash": "0xdfefe4661feb72f97ff60888a2bc78fed9e32aae2cb2838731e75c95c32c0496"
+  },
+  "0x6f11b90679ddb8ca42251d040fb54beb22384383c19f8a068b7d9577d40ce60d": {
+    "layer": "L1",
+    "status": "Relayed",
+    "relayTxHash": "0xd7a1157515b83c6b7fcff62ae46ca58315d7a5a9a477f243417566bdd762e96d"
+  },
+  "0x804b9e9b02de4c7b1c6bc5dac327420035b126b9ea77bb5a7954d1dd20b40e8d": {
+    "layer": "L2",
+    "status": "Relayed",
+    "stateBatchTx": "0x9eecf3f90ba21c6c89e7f4a8533bf8bca8db1fc4088fd803551640fbb9d45e73",
+    "stateBatchTxInclusionBlockNumber": 26010922,
+    "relayTxHash": "0x300661eb72225a26bb223079c839d9a8d90c6f6c3c66676389c816e324e99399"
+  },
+  "0xca222a9f37ec726b41b10fc4c24c374eec92065e425183507495e0f27d5eac6b": {
+    "layer": "L1",
+    "status": "Relayed",
+    "relayTxHash": "0xa698f6390b89d3fb48d88b39c1c022987764a0527e413e8208b1826c2f023df0"
+  },
+  "0x6bfa225203603c9f78f6bd073dccc497e983b901bdb85effe6f43f34fd2f213a": {
+    "layer": "L2",
+    "status": "Relayed",
+    "stateBatchTx": "0x0bee9d8990f41b0543309faee5a91977ec1176f4f0b68b760f6900d5516f9c25",
+    "stateBatchTxInclusionBlockNumber": 26071964,
+    "relayTxHash": "0x7bf86bc9ec59019d5e91bdc85fb5be63213bd9b2f87ffd516d7203b8389ec41c"
+  },
+  "0x03e1d5bfa074eb0ca437b4f6296d4c5c9b9a6011bf69380a690e7cb851b7380a": {
+    "layer": "L1",
+    "status": "Relayed",
+    "relayTxHash": "0x77736a02d90a33fbaa96bce33d999d72ca31f896aa244d98b93aad430f7d526e"
+  },
+  "0xb96692270496e46e2b76c5e1f1767187893d1a244c5fdf6d58e48008b8da3fd5": {
+    "layer": "L2",
+    "status": "Relayed",
+    "stateBatchTx": "0xf07b97d9ce37017f6fe68c475baaf0dcd907cc16d14b3508d736748316c572b3",
+    "stateBatchTxInclusionBlockNumber": 26072091,
+    "msgHash": "0xd0fcc1564103a10ffdc5e0efcdc9e34e4f3932c3dd6ab2e0391ff0edc1e4698c",
+    "relayTxHash": "0x5926df5b9038d0c9fc998797b97072edddff1162bea92d51471aee5c5b4be6dc",
+    "next action": "None"
+  },
+  "0x3e2e8f7ecd241818c50f608348711ee28dc2490cc46d72f7beadd9841d8b5563": {
+    "layer": "L1",
+    "status": "Relayed",
+    "relayTxHash": "0xf917a9e1dba3b5cb6a001bfe71287632018c48a9c936b5931268ad9b3afcec4d",
+    "next action": "None"
+  },
+  "0xdf7230fd26d708671572e0525eef3194519396cfba9b626d5891a55049eab4ea": {
+    "layer": "L2",
+    "status": "Relayed",
+    "stateBatchTx": "0x7ed79a432c4908e2d630083137e41445ca24825990d520220e6eff437f72a937",
+    "stateBatchTxInclusionBlockNumber": 26075737,
+    "msgHash": "0x380719db6819d1af32be1f37c3a19fc6b61cde8fae8395fc7549d2dc5164aedd",
+    "relayTxHash": "0xebbd6030d53feae7c434d0175c02e09705d6e7da3892c4c994f5013426b05b7c",
+    "next action": "None"
+  },
+  "0xd57b45c97e017290eea8dd766de904ef563031db3f84ad43f957debd33f72475": {
+    "layer": "L1",
+    "status": "Relayed",
+    "relayTxHash": "0x80042aac6019d9ab8cd2003c3d64bce3a3044403bf672590b68764580b923fcf",
+    "next action": "None"
+  },
+  "0x057fe1442c1f8ff6506e8a9ba841ce5361e50092a6a7ffc4566612a611120de6": {
+    "layer": "L2",
+    "status": "Ready",
+    "stateBatchTx": "0x605f424b9b4dd10452d9da7e1eff788ada46d01dc769e1a8872632fc924cf610",
+    "stateBatchTxInclusionBlockNumber": 26099518,
+    "msgHash": "0xde61a8eb5c9f830d8618c0f15b1660557a8797d11798f0b2b1b176e2204cddf1"
+  }
+}
